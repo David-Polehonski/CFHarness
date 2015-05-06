@@ -51,8 +51,7 @@
 		
 		<cfparam name="REQUEST.RESULTS" default="#structNew()#" />
 		<cfparam name="REQUEST.TESTS" default="#structNew()#" />
-		<cfparam name="REQUEST.testName" default="" />
-    
+		
         <cfinclude template="_functions.cfm" />
         
 		<cfif TargetPage CONTAINS "index.cfm">
@@ -66,7 +65,6 @@
 					<cfinclude template="/testroot/#tests.name#"/>
 				</cfif>	
 			</cfloop>
-			
 		<cfelse>	
             <cfset THIS.onMissingTemplate(ARGUMENTS.TargetPage) />
 		</cfif>
@@ -86,9 +84,17 @@
         <cfparam name="REQUEST.failed" default="0" >
 
         <cfif NOT structKeyExists(REQUEST, "response")>
+
+            <cfscript>
+                for (test in REQUEST.TESTS) {
+                    getResults(REQUEST.TESTS[test]); // Copy results out into the REQUEST scope
+                }
+            </cfscript>
+
             <cfsavecontent variable="REQUEST.response">				
                 <cfinclude template="_results.cfm" />
             </cfsavecontent>
+
         </cfif>
 
      	<cfreturn />

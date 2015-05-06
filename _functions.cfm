@@ -14,7 +14,17 @@
 	
 	<cfreturn />
 </cffunction>
-        
+
+<cffunction name="getResults" returntype="void" >
+    <cfargument name="test" required="true" />
+    
+    <cfset REQUEST.RESULTS[test.testName] = arrayNew(1) />
+    
+    <cfloop collection="#test.tests#" item="t">
+        <cfset arrayAppend(REQUEST.RESULTS[test.testName], new TestResult(t, test.results[t])) />
+    </cfloop>
+</cffunction>
+                
 <cffunction name="stream" returntype="void">
     <cfargument name="requestScope" required="true" />
     

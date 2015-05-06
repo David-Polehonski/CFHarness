@@ -4,17 +4,20 @@
 			<link href="css.cfm" rel="stylesheet" type="text/css" media="all">
 		</head>
 		<body>
-			<cfloop collection="#REQUEST.results#" item="testName">
-			<h1>
+            <cfloop collection="#REQUEST.results#" item="testName">
+           
+            <h1>
 				Results #(testName != '')? 'for ' & testName & ' test' : ''#: 
 			</h1>
 			<ul>
-				<cfset i = 1>
-				<cfloop array="#REQUEST.results[testName]#" index="result">
-					<li>
-						#REQUEST.TESTS[testName][i++]# : <span class="#result#">#result#</span>
-					</li>
-					<cfset REQUEST[result]++ >
+                
+				<cfloop array="#REQUEST.results[testName]#" item="i">
+                    <li>
+                        #i.getTest()# :     
+                        <span class="#i.getResult()#">
+                            #i.getResult()# <cfif i.getResult() IS "Failed"> : #i.getReason()#</cfif>
+                        </span>
+                    </li>
 				</cfloop>
 			</ul>
 			</cfloop>
