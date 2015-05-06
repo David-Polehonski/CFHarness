@@ -1,0 +1,64 @@
+@charset "utf-8";
+/*
+||	reset.css -David Polehonski
+||	*/
+
+/*	
+||	Default html box-model properties for all elements
+||	*/
+html {
+  margin:0;
+  padding:0;
+  border:0;
+}
+/*
+||	Defaults for all major elements
+||	*/
+body, div, span, object, iframe,h1, h2, h3, h4, h5, h6, p, blockquote, pre,a, abbr, acronym, address, code,del, dfn, em, img, q, dl, dt, dd, ol, ul, li,fieldset, form, label, legend,table, caption, tbody, tfoot, thead, tr, th, td,article, aside, dialog, figure, footer, header,hgroup, nav, section
+{
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: 100%;
+  font: inherit;
+  vertical-align: baseline;
+  
+  -moz-box-sizing:content-box;
+  -o-box-sizing:content-box;
+  -webkit-box-sizing:content-box;
+  box-sizing:content-box;
+}
+/*
+||	Defaults for HTML5 block level elements
+||	*/
+article, aside, details, figcaption, figure, dialog,footer, header, hgroup, menu, nav, section {
+    display:block;
+	box-sizing:content-box;
+}
+/*
+||	Default line height scaling factor
+*/
+body {
+  line-height: 1.5;
+}
+/*
+||	Table cell alignment in middle of cell for prettyfication...
+*/
+table, th, td {
+  vertical-align: middle;
+}
+
+/*
+||	Psuedo class/ quotes resetting.
+*/
+blockquote:before, blockquote:after, q:before, q:after { content: ''; }
+blockquote, q { quotes: "" ""; }
+:focus { outline: 0; }
+/*
+||	Remove linked image border
+*/
+a img { border: none; -ms-interpolation-mode:bicubic;}
+
+html.ie *{
+	zoom:1;	
+}
