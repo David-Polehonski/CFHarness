@@ -1,7 +1,7 @@
 <cfoutput>
 	<html>
 		<head>
-			<link href="_assets/_defaults.css" rel="stylesheet" type="text/css" media="all">
+			<link href="css.cfm" rel="stylesheet" type="text/css" media="all">
 		</head>
 		<body>
 			<cfloop collection="#REQUEST.results#" item="testName">

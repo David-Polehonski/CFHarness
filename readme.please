@@ -1,0 +1,7 @@
+Copyrigth Ouse Creative Ltd 2015
+CF Harness - Author David Polehonski
+
+Instructions:
+    Getting Started:
+    
+    Create a new application.cfc in the root of your tests directory that extends the cf-harness.application.

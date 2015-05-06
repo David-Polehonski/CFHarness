@@ -4,20 +4,20 @@
 */
 
 @import url('reset.css');
-html
-{
+html {
 	font-family:Tahoma, Geneva, sans-serif;
-	font-size: 14px; /* 1EM */
+	font-size: 100%;
 	font-weight: normal;
 	
 	letter-spacing: 0.1em;
 	line-height: 1.5;
 }
 
-body
-{
-	width: 95%;
+body {
+    box-sizing: border-box;
+	width: 100%;
 	padding: 0% 2.5% 0% 2.5%;
+    margin: 0px;
 }
 
 h1
