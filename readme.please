@@ -3,5 +3,7 @@ CF Harness - Author David Polehonski
 
 Instructions:
     Getting Started:
-    
+
     Create a new application.cfc in the root of your tests directory that extends the cf-harness.application.
+
+	Create a new set of tests by extending the baseTest.cfc into your own components.
