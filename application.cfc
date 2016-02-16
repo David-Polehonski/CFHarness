@@ -126,6 +126,10 @@
                     <cfset REQUEST.response = REQUEST.response.replaceAll(" +", " ") />
                     <cfset REQUEST.responseType  = "text/css" />
                 </cfcase>
+				<cfcase value="icon.cfm">
+					<cfset REQUEST.response = toBinary(imageRead('_assets/cf-harness-icon.png')) />
+                    <cfset REQUEST.responseType  = "image/png" />
+                </cfcase>
                 <cfdefaultcase>
                     <cfset var test = listLast(TargetPage,'/')>
 					<cfif fileExists(expandPath('/testroot') & '/' & test)>
@@ -154,6 +158,12 @@
 			<!--- <cfdump var="#exception#" abort="true"/> --->
 
 			<cfset testContext = getCurrentTest() />
+			<cfif isDefined('Exception.detail') AND Exception.detail IS NOT "" >
+				<cfset testContext.setError(Exception.detail)/>
+			<cfelseif isDefined('Exception.tagContext') and arrayLen(Exception.tagContext) GTE 1 >
+				<cfset e = Exception.tagContext[1] />
+				<cfset testContext.setError("#e.template#:#e.line# <br/> #e.codePrintHTML#")/>
+			</cfif>
 			<cfset testContext.assert(false, assertion) />
 
 			<!--- <cfdump var="#testContext#" abort="true"/> --->

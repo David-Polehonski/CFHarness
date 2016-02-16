@@ -20,7 +20,11 @@
 
 
     <!--- Create BINARY representation to stream --->
-    <cfset binaryResponse = toBinary(toBase64(trim(requestScope.response))) />
+	<cfif !IsBinary(requestScope.response)>
+    	<cfset binaryResponse = toBinary(toBase64(trim(requestScope.response))) />
+	<cfelse>
+    	<cfset binaryResponse = requestScope.response/>
+	</cfif>
     <!--- Add cache control headers --->
     <cfheader name="Cache-Control" value="max-age=120" />
     <cfheader name="Etag" value="#hash(binaryResponse, 'MD5')#" />
