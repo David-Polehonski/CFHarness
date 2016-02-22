@@ -1,20 +1,3 @@
-
-<cffunction name="getResults" returntype="void" >
-    <cfargument name="test" required="true" />
-
-	<cfif arrayLen(test.tests) GT 0 >
-		<cfset var results = test.getResults() />
-
-	    <cfset REQUEST.RESULTS[test.testName] = arrayNew(1) />
-
-
-		<cfloop array="#test.tests#" item="t">
-			<cfset arrayAppend(REQUEST.RESULTS[test.testName], new TestResult(t, results[t])) />
-	    </cfloop>
-	</cfif>
-
-</cffunction>
-
 <cffunction name="stream" returntype="void">
     <cfargument name="requestScope" required="true" />
 

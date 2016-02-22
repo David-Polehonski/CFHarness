@@ -9,6 +9,7 @@ component name="stub" accessors="true" {
 				createProperty(GetMetaData(baseObj[i]));
 			}
 		}
+
 		VARIABLES.baseObj = baseObj;
 		return THIS;
 	}

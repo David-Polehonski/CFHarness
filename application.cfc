@@ -48,23 +48,42 @@
 	<cffunction name="OnRequestStart" access="public" returntype="boolean" output="true" hint="Fires at first part of page processing.">
    		<cfargument name="TargetPage" type="string" required="true"/>
 
+		<cfif TargetPage CONTAINS "index.cfm" >
+
+		</cfif>
+
 		<cfset setupRequest() />
 
         <cfinclude template="_functions.cfm" />
 
-		<cfif TargetPage CONTAINS "index.cfm">
-			<!---
-			||	RUN ALL TESTS
-			||	--->
-			<cfdirectory action="list" name="tests" directory="/testroot">
-			<cfset var pattern = "^test_([\w\._-]*).cfm">
-			<cfloop query="tests">
-				<cfif (REFindNoCase(pattern,tests.name) IS NOT 0) AND (fileExists(expandPath('/testroot') & '/' & tests.name)) >
-					<cfinclude template="/testroot/#tests.name#"/>
+		<cfif TargetPage CONTAINS "run.cfm">
+			<cfset var testPath = ListQualify(CGI.path_info, '' , '/') />
+			<cfif testPath IS NOT "">
+				<cfif FileExists(Expandpath('/testroot/#testPath#.cfc')) >
+					<cfset test = createObject('component', 'testroot.#testPath#').init() />
+				<cfelse>
+					<cfset THIS.onMissingTemplate(ListLast(testPath, '/')) />
 				</cfif>
-			</cfloop>
+			<cfelse>
+				<!---
+				||	RUN ALL TESTS
+				||	--->
+				<cfdirectory action="list" name="tests" directory="/testroot">
+				<cfset var pattern = "^([\w\._-]+)test.cfc" />
+				<cfloop query="tests">
+					<cfif (REFindNoCase(pattern,tests.name) IS NOT 0) AND (fileExists(expandPath('/testroot') & '/' & tests.name)) >
+						<cfset test = createObject('component', 'testroot.' & replace(tests.name, '.cfc', '')).init() />
+					</cfif>
+				</cfloop>
+			</cfif>
 		<cfelse>
-            <cfset THIS.onMissingTemplate(ARGUMENTS.TargetPage) />
+			<cftry>
+				<cfset THIS.onMissingTemplate(ARGUMENTS.TargetPage) />
+				<cfcatch>
+					<cflocation url='run.cfm' addToken="false" />
+					<cfabort />
+				</cfcatch>
+			</cftry>
 		</cfif>
 
     	<cfreturn true />
@@ -83,8 +102,8 @@
         <cfif NOT structKeyExists(REQUEST, "response")>
 
             <cfscript>
-				for (test in REQUEST.TESTS) {
-					getResults(REQUEST.TESTS[test]); // Copy results out into the REQUEST scope
+				for (test in REQUEST['tests']) {
+					setResults(REQUEST.TESTS[test].run());
                 }
             </cfscript>
 
@@ -131,12 +150,7 @@
                     <cfset REQUEST.responseType  = "image/png" />
                 </cfcase>
                 <cfdefaultcase>
-                    <cfset var test = listLast(TargetPage,'/')>
-					<cfif fileExists(expandPath('/testroot') & '/' & test)>
-                        <cfinclude template="/testroot/#test#" />
-                    <cfelse>
-                        <cfset assert("Test Definition '#test#' Exists", false)>
-                    </cfif>
+                    <cfthrow message="Invalid Test definition" detail="#ARGUMENTS.TargetPage# is an invalid test definition, file not found [#ARGUMENTS.TargetPage#.cfc]" />
                 </cfdefaultcase>
             </cfswitch>
         <cfreturn true/>
@@ -149,28 +163,37 @@
      	<cfargument name="EventName" type="string" required="false" default="" />
 			<cfset var assertion = "Test failed ">
 
-			<cfif isDefined('Exception.message')>
-				<cfset assertion &= Exception.message >
-			<cfelse>
-				<cfset assertion &= 'unexpectedly'>
-			</cfif>
+			<cftry>
+				<cfif isDefined('Exception.message')>
+					<cfset assertion &= Exception.message >
+				<cfelse>
+					<cfset assertion &= 'unexpectedly'>
+				</cfif>
 
-			<!--- <cfdump var="#exception#" abort="true"/> --->
+				<!--- <cfdump var="#exception#" abort="true"/> --->
 
-			<cfset testContext = getCurrentTest() />
-			<cfif isDefined('Exception.detail') AND Exception.detail IS NOT "" >
-				<cfset testContext.setError(Exception.detail)/>
-			<cfelseif isDefined('Exception.tagContext') and arrayLen(Exception.tagContext) GTE 1 >
-				<cfset e = Exception.tagContext[1] />
-				<cfset testContext.setError("#e.template#:#e.line# <br/> #e.codePrintHTML#")/>
-			</cfif>
-			<cfset testContext.assert(false, assertion) />
+				<cfset testContext = getCurrentTest() />
 
-			<!--- <cfdump var="#testContext#" abort="true"/> --->
+				<cfif isDefined('Exception.detail') AND Exception.detail IS NOT "" >
+					<cfset testContext.setError(Exception.detail)/>
+				<cfelseif isDefined('Exception.tagContext') and arrayLen(Exception.tagContext) GTE 1 >
+					<cfset e = Exception.tagContext[1] />
+					<cfset testContext.setError("#e.template#:#e.line# <br/> #e.codePrintHTML#")/>
+				</cfif>
 
-			<cfset THIS.onRequest('error.cfm') />
-			<cfset THIS.onRequestEnd('error.cfm') />
+				<cfset testContext.setCurrentTest('Application Exception') />
+				<cfset testContext.assert(false, assertion) />
 
+				<!--- <cfdump var="#testContext#" abort="true"/> --->
+
+				<cfset THIS.onRequest('error.cfm') />
+				<cfset THIS.onRequestEnd('error.cfm') />
+
+				<cfcatch>
+					<cfdump var="#exception#" abort="false"/>
+					<cfdump var="#cfcatch#" abort="true"/>
+				</cfcatch>
+			</cftry>
 		<cfreturn />
     </cffunction>
 
@@ -186,8 +209,8 @@
 		}
 
 		private void function setupRequest() {
-			REQUEST.tests = structNew();
-			REQUEST.results = structNew();
+			REQUEST.tests = structNew('linked');
+			REQUEST.results = structNew('linked');
 			REQUEST.passed = 0;
 			REQUEST.failed = 0;
 
@@ -195,6 +218,22 @@
 				"previousTests" = arrayNew(1),
 				"currentTest" = new BaseTest('Application Initialization')
 			};
+		}
+
+		private void function setResults(required component test) output=false {
+			var results = test.getResults();
+
+			if (test.getTests().count() GT 0) {
+
+				REQUEST.RESULTS[test.getTestName()] = structNew('linked');
+
+				for(var set in test.getTests()) {
+					REQUEST.RESULTS[test.getTestName()][set] = [];
+					for(t in test.getTests()[set]){
+						REQUEST.RESULTS[test.getTestName()][set].append(new TestResult(t, results[set][t]));
+					}
+			    }
+			}
 		}
 	</cfscript>
 

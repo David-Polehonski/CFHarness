@@ -13,14 +13,30 @@
 				Results #(testName != '')? 'for ' & testName & ' test' : ''#:
 			</h1>
 			<ul>
-
-				<cfloop array="#REQUEST.results[testName]#" item="i">
-                    <li>
-                        #i.getTest()# :
-                        <span class="#i.getResult()#">
-                            #i.getResult()# <cfif i.getResult() IS "Failed"> : #i.getReason()#</cfif>
-                        </span>
-                    </li>
+				<cfloop collection="#REQUEST.results[testName]#" index="setName" item="testSet">
+					<li>
+						<!--- <cfdump var = "#REQUEST.tests#" abort="true" /> --->
+						<cfif structKeyExists(REQUEST.tests[testName], setName) >
+							<cfset d = GetMetaData(REQUEST.tests[testName][setName]) />
+							<cfif StructKeyExists(d, "testSet") >
+								#d.testSet#
+							<cfelse>
+								#setName#
+							</cfif>
+						<cfelse>
+							#setName#
+						</cfif>
+						<ul>
+						<cfloop array="#testSet#" item="i">
+		                    <li>
+		                        #i.getTest()# :
+		                        <span class="#i.getResult()#">
+		                            #i.getResult()# <cfif i.getResult() IS "Failed"> : #i.getReason()#</cfif>
+		                        </span>
+		                    </li>
+						</cfloop>
+						</ul>
+					</li>
 				</cfloop>
 			</ul>
 			</cfloop>
