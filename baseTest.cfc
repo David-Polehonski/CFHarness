@@ -73,7 +73,7 @@ component name="baseTest" output=false accessors=true {
 				if (e.detail IS NOT ""){
 					THIS.setError(e.detail);
 				}
-				assert(false, "An unexpected error thrown in #name#");
+				assert(false, "An unexpected error was thrown in #fx#");
 			}
 			VARIABLES.proxy = JavaCast('null', 0);
 		}
