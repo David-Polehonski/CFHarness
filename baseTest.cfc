@@ -26,7 +26,7 @@ component name="baseTest" output=false accessors=true {
         return THIS;
     }
 
-	public component function run() output="false" {
+	public component function run() output=false {
 
 		application.cfharness.setCurrentTest(THIS);
 
@@ -77,6 +77,9 @@ component name="baseTest" output=false accessors=true {
 			}
 			VARIABLES.proxy = JavaCast('null', 0);
 		}
+
+		VARIABLES.tearDown();
+
 		return THIS;
 	}
 
@@ -86,8 +89,9 @@ component name="baseTest" output=false accessors=true {
         return;
     }
 
-    private struct function tearDown () output="false" {
+    private void function tearDown () output="false" {
         /* Call any tearDowns */
+
         THIS.onTearDown();
         return;
     }
