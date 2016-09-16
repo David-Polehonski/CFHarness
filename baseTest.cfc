@@ -17,12 +17,11 @@ component name="baseTest" output=false accessors=true {
 
 		THIS.setTestName(ARGUMENTS.testName);
 
-        REQUEST.TESTS[THIS.getTestName()] = THIS; // Store reference into request.
-
 		VARIABLES.tests = structNew('linked');
 		VARIABLES.results = structNew('linked');
 		VARIABLES.setup();
 
+		REQUEST.TESTS[THIS.getTestName()] = THIS; // Store reference into request.
         return THIS;
     }
 

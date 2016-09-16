@@ -26,6 +26,7 @@
 	<cffunction name="OnApplicationStart" access="public" returntype="boolean" output="false" hint="Fires when the application is first created.">
 
 		<cfset APPLICATION['cfharness'] = VARIABLES />
+		<cfset APPLICATION['cfharnessLog'] = "TestSuite" />
 
      	<cfreturn true />
     </cffunction>
@@ -48,15 +49,9 @@
 	<cffunction name="OnRequestStart" access="public" returntype="boolean" output="true" hint="Fires at first part of page processing.">
    		<cfargument name="TargetPage" type="string" required="true"/>
 
-		<cfif TargetPage CONTAINS "index.cfm" >
-
-		</cfif>
-
 		<cfset setupRequest() />
 
-        <cfinclude template="_functions.cfm" />
-
-		<cfif TargetPage CONTAINS "run.cfm">
+		<cfif arguments.TargetPage CONTAINS "run.cfm">
 			<cfset var testPath = ListQualify(CGI.path_info, '' , '/') />
 			<cfif testPath IS NOT "">
 				<cfif FileExists(Expandpath('/testroot/#testPath#.cfc')) >
@@ -85,7 +80,6 @@
 				</cfcatch>
 			</cftry>
 		</cfif>
-
     	<cfreturn true />
     </cffunction>
 
@@ -99,6 +93,7 @@
         <cfparam name="REQUEST.passed" default="0" >
         <cfparam name="REQUEST.failed" default="0" >
 
+		<cfinclude template="_functions.cfm" />
         <cfif NOT structKeyExists(REQUEST, "response")>
 
             <cfscript>
@@ -106,6 +101,13 @@
 					setResults(REQUEST.TESTS[test].run());
                 }
             </cfscript>
+
+
+			<cfset var headers = GetHttpRequestData().headers />
+			<cfif StructKeyExists(headers, "accepts") >
+				<cfset REQUEST.responseType = headers["accepts"] />
+				<cflog file="#APPLICATION['cfharnessLog']#" application="yes" text="Test Suite Info: Producing results #REQUEST.responseType#." />
+			</cfif>
 
             <cfsavecontent variable="REQUEST.response">
                 <cfinclude template="_results.cfm" />
@@ -116,15 +118,22 @@
      	<cfreturn />
     </cffunction>
 
+	<!--- <cffunction name="onCfcRequest" access="public" returntype="void" output="true" hint="Api Requests are passed through here">
+		<cfargument name="cfcName" type="string" required="true" />
+		<cfargument name="methodName" type="string" required="true" />
+		<cfargument name="args" type="struct" required="true" />
+
+		<Cfdump var="HELLO" abort="true" />
+
+	</cffunction> --->
 
 	<cffunction name="OnRequestEnd" access="public" returntype="void" output="true" hint="Fires after the page processing is complete.">
 		<cfargument name="TargetPage" type="string" required="true" />
+		<cfinclude template="_functions.cfm" />
 
-		<cflog file="TestSuite" application="yes" text="Test Suite run: Total: #REQUEST.passed + REQUEST.failed#, #REQUEST.passed# passes, #REQUEST.failed# failures." />
+		<cflog file="#APPLICATION['cfharnessLog']#" application="yes" text="Test Suite run: Total: #REQUEST.passed + REQUEST.failed#, #REQUEST.passed# passes, #REQUEST.failed# failures." />
         <cfset stream(REQUEST) />
-		<cfcontent type="text/html" reset="yes"><cfoutput>#REQUEST.RESPONSE#</cfoutput>
-
-     	<cfreturn />
+		<cfreturn />
     </cffunction>
 
 
@@ -170,8 +179,6 @@
 					<cfset assertion &= 'unexpectedly'>
 				</cfif>
 
-				<!--- <cfdump var="#exception#" abort="true"/> --->
-
 				<cfset testContext = getCurrentTest() />
 
 				<cfif isDefined('Exception.detail') AND Exception.detail IS NOT "" >
@@ -184,14 +191,12 @@
 				<cfset testContext.setCurrentTest('Application Exception') />
 				<cfset testContext.assert(false, assertion) />
 
-				<!--- <cfdump var="#testContext#" abort="true"/> --->
-
 				<cfset THIS.onRequest('error.cfm') />
 				<cfset THIS.onRequestEnd('error.cfm') />
 
 				<cfcatch>
-					<cfdump var="#exception#" abort="false"/>
-					<cfdump var="#cfcatch#" abort="true"/>
+					<cfdump label="Initial Exception: #arguments.eventName#" var="#exception#" abort="false"/>
+					<cfdump label="Error in exception handler" var="#cfcatch#" abort="true"/>
 				</cfcatch>
 			</cftry>
 		<cfreturn />
