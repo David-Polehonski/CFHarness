@@ -1,5 +1,5 @@
-component name="stub" accessors="true" {
-	public function init(string cfcStub){
+component name="stub" accessors="true" initmethod="_init" {
+	public function _init(string cfcStub){
 		if (StructKeyExists(arguments, "cfcStub")) {
 			var baseObj = createObject('component', '#cfcStub#');
 
@@ -19,9 +19,9 @@ component name="stub" accessors="true" {
 	private void function createFunction(baseMetaName) {
 
 		THIS[baseMetaName] = function () {
+			param name="arguments" default={};
 			if (StructKeyExists(THIS, "on#baseMetaName#")) {
-				var fx = this["on#baseMetaName#"]();
-				return fx;
+				return this["on#baseMetaName#"](argumentCollection=arguments);
 			} else {
 				//	Could replace with defaults later?
 				return JavaCast('null', 0);

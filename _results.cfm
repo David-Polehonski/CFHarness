@@ -31,7 +31,14 @@
 		                    <li>
 		                        #i.getTest()# :
 		                        <span class="#i.getResult()#">
-		                            #i.getResult()# <cfif i.getResult() IS "Failed"> : #i.getReason()#</cfif>
+		                            #i.getResult()#
+									<cfif i.getResult() IS "Failed">
+										<cfif isJson(i.getReason())>
+											#WriteDump(var=deserializeJson(i.getReason()), label='Reason')#
+										<cfelseif isValid('string', i.getReason()) >
+											: #i.getReason()#
+										</cfif>
+									</cfif>
 		                        </span>
 		                    </li>
 						</cfloop>
