@@ -3,5 +3,15 @@ CF Harness - Author David Polehonski
 
 Instructions:
     Getting Started:
-    
+
     Create a new application.cfc in the root of your tests directory that extends the cf-harness.application.
+
+	Create a new set of tests by extending the baseTest.cfc into your own components, for each test you wish to run use the naming convention 'test[a-z0-9]+'. You can also add the cfharness specific attribute 'order' to specify the order you wish your tests to run in.
+
+	Example (CFSCRIPT):
+
+	component name="myTest" extends="cfharness.baseTest"{
+		public void function testThisExample () order=1 {
+			assert(true IS true, "The example is running");
+		}
+	}
