@@ -18,8 +18,8 @@
 						<!--- <cfdump var = "#REQUEST.tests#" abort="true" /> --->
 						<cfif structKeyExists(REQUEST.tests[testName], setName) >
 							<cfset d = GetMetaData(REQUEST.tests[testName][setName]) />
-							<cfif StructKeyExists(d, "testSet") >
-								#d.testSet#
+							<cfif StructKeyExists(d, "description") >
+								#d.description#
 							<cfelse>
 								#setName#
 							</cfif>

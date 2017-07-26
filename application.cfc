@@ -23,13 +23,19 @@
 	<cfset THIS.setClientCookies = true >
 	<cfset THIS.setDomainCookies = false >
 
+	<cfset THIS.mappings['/testroot'] = expandPath('./') />
+
 	<cffunction name="OnApplicationStart" access="public" returntype="boolean" output="false" hint="Fires when the application is first created.">
 
 		<cfset APPLICATION['cfharness'] = VARIABLES />
 		<cfset APPLICATION['cfharnessLog'] = "TestSuite" />
 
-     	<cfreturn true />
-    </cffunction>
+		<cfset onTestApplicationStart() />
+
+		<cfreturn true />
+	</cffunction>
+
+	<cffunction name="onTestApplicationStart" access="public" returntype="void" output="false"></cffunction>
 
 	<cffunction name="OnApplicationEnd" access="public" returntype="void" output="false" hint="Fires when the application is terminated.">
     	<cfargument name="ApplicationScope" type="struct" required="false" default="#StructNew()#" />
@@ -47,7 +53,7 @@
     </cffunction>
 
 	<cffunction name="OnRequestStart" access="public" returntype="boolean" output="true" hint="Fires at first part of page processing.">
-   		<cfargument name="TargetPage" type="string" required="true"/>
+		<cfargument name="TargetPage" type="string" required="true"/>
 
 		<cfset setupRequest() />
 
@@ -132,9 +138,10 @@
 		<cfinclude template="_functions.cfm" />
 
 		<cflog file="#APPLICATION['cfharnessLog']#" application="yes" text="Test Suite run: Total: #REQUEST.passed + REQUEST.failed#, #REQUEST.passed# passes, #REQUEST.failed# failures." />
-        <cfset stream(REQUEST) />
+		<cfset stream(REQUEST) />
+
 		<cfreturn />
-    </cffunction>
+  </cffunction>
 
 
 	<cffunction name="onMissingTemplate" access="public" returntype="boolean" output="true" hint="I execute if the requested template does not exist.">

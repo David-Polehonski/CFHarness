@@ -13,7 +13,7 @@ component name="baseTest" output=false accessors=true {
 
 	property string testName;
 
-    public any function init (required string testName=THIS.testName) output="false" {
+	public any function init (required string testName=THIS.testName) output="false" {
 
 		THIS.setTestName(ARGUMENTS.testName);
 
