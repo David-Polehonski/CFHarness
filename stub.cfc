@@ -17,7 +17,6 @@ component name="stub" accessors="true" initmethod="_init" {
 	}
 
 	private void function createFunction(baseMetaName) {
-
 		THIS[baseMetaName] = function () {
 			param name="arguments" default={};
 			if (StructKeyExists(THIS, "on#baseMetaName#")) {
@@ -28,6 +27,7 @@ component name="stub" accessors="true" initmethod="_init" {
 			}
 		}
 	}
+	
 	private void function createProperty() {
 		WriteDump(baseMeta);
 	}
