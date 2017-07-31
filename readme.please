@@ -1,17 +1,35 @@
-Copyrigth Ouse Creative Ltd 2015
-CF Harness - Author David Polehonski
-
 Instructions:
 	Getting Started:
 
 	Create a new application.cfc in the root of your tests directory that extends the cfharness application.cfc
 
-	Create a new set of tests by extending the baseTest.cfc into your own components, for each test you wish to run use the naming convention 'test[a-z0-9]+'. You can also add the cfharness specific attribute 'order' to specify the order you wish your tests to run in.
+	Create a new set of tests by extending the baseTest.cfc into your own components, each test component must end with the word 'test' e.g. myComponentTest.cfc.
+	For each test within the CFC follow the structure 'test[a-z0-9]+'. You can also add the cfharness specific attribute 'order' to specify the order you wish your tests to run in.
 
 	Example (CFSCRIPT):
 
 	component name="myTest" extends="cfharness.baseTest"{
-		public void function testThisExample () order=1 {
+
+		this.testname="An Overarching title for the set of test, e.g testing 'myComponent.cfc'";
+
+		public void function testThisExample () order=1 description="An optional Test Descript, if not used the function name will identify the test." {
+
+			// assert: A Boolean Expression validating some test criterion, A description of what your testing and the result will appear in your test output.
 			assert(true IS true, "The example is running");
 		}
 	}
+
+	Running The Tests:
+
+	Navigate the to the test directory and enter the URL 'run.cfm' to run all the tests in that directory. e.g.
+
+	myProject/
+	-myComponent.cfc
+	-tests/
+	--myComponentTest.cfc
+	--cfharness/
+
+
+	Navigate to http://server/tests/run.cfm to execute all tests. If you only want to execute one set of tests you can append then name of the file (with the file extension) to the url,
+	e.g. http://server/tests/run.cfm/myComponentTest
+	

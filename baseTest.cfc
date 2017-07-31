@@ -29,8 +29,9 @@ component name="baseTest" output=false accessors=true {
 		application.cfharness.setCurrentTest(this);
 
 		try {
-			VARIABLES.setup();
+			variables.setup();
 		} catch (any Ex) {
+			//	Capture failures as failed tests.
 			assert(false, "An unexpected error was thrown in setup, #Ex.message#");
 			return this;
 		}
@@ -61,7 +62,6 @@ component name="baseTest" output=false accessors=true {
 			} else {
 				return 0;
 			}
-
 		});
 
 		for (var fx in testArray) {
@@ -69,7 +69,7 @@ component name="baseTest" output=false accessors=true {
 			variables.proxy = this[fx];
 
 			try {
-				variables.proxy();
+				this[fx]();
 			} catch (e) {
 				this.setError(e.message);
 				if (e.detail IS NOT ""){
@@ -77,9 +77,7 @@ component name="baseTest" output=false accessors=true {
 				}
 				assert(false, "An unexpected error was thrown in #fx#");
 			}
-			variables.proxy = JavaCast('null', 0);
 		}
-
 
 		try {
 			variables.tearDown();
@@ -87,37 +85,38 @@ component name="baseTest" output=false accessors=true {
 			assert(false, "An unexpected error was thrown during tearDown, #Ex.message#");
 			return this;
 		}
+
 		return this;
 	}
 
-    private void function setup () output="false" {
-        /* Call any setup */
-        THIS.onSetup();
-        return;
-    }
+  private void function setup () output="false" {
+      /* Call any setup */
+      THIS.onSetup();
+      return;
+  }
 
-    private void function tearDown () output="false" {
-        /* Call any tearDowns */
+  private void function tearDown () output="false" {
+      /* Call any tearDowns */
 
-        THIS.onTearDown();
-        return;
-    }
+      THIS.onTearDown();
+      return;
+  }
 
-    private struct function createResult(required boolean result) output="false" {
-        var r = structnew();
+	private struct function createResult(required boolean result) output="false" {
+		var r = structnew();
 		var result = arguments.result;
 
 		r['isPassed'] = function () { return result; };
 		r['result'] = arguments.result? 'Passed' : 'Failed';
 
-        if (NOT arguments.result) {
-            r['reason'] = this.getError();
-        }
+		if (NOT arguments.result) {
+			r['reason'] = this.getError();
+		}
 
-        return r;
-    }
+		return r;
+	}
 
-    public boolean function assert (required any assertion, required string description) output="false" {
+	public boolean function assert (required any assertion, required string description) output="false" {
 		if (!variables.tests.keyExists(getCurrentTest())){
 			variables.tests[getCurrentTest()] = [];
 			variables.results[getCurrentTest()] = structNew('linked');
@@ -125,7 +124,7 @@ component name="baseTest" output=false accessors=true {
 
 		variables.tests[getCurrentTest()].append(description);
 
-        this.beforeAssert(argumentCollection = arguments);
+		this.beforeAssert(argumentCollection = arguments);
 
 		if (IsValid('boolean', arguments.assertion)){
 			if(NOT arguments.assertion AND this.getError() IS '') {
@@ -134,25 +133,28 @@ component name="baseTest" output=false accessors=true {
 
 			variables.results[getCurrentTest()][description] = createResult(arguments.assertion);
 
-		} else if (IsCustomFunction(ARGUMENTS.assertion) OR isClosure(ARGUMENTS.assertion)){
+			} else if (IsCustomFunction(ARGUMENTS.assertion) OR isClosure(ARGUMENTS.assertion)){
 
 			try {
 				proxy = arguments.assertion;
 				variables.results[getCurrentTest()][description] = createResult(proxy());
 				proxy = JavaCast('null', 0);
-	        } catch (e) {
+			} catch (e) {
 				this.setError(e.message);
+
 				if(e.detail IS NOT '') {
 					this.setError(e.detail);
 				}
-	            variables.results[getCurrentTest()][description] = createResult(false);
-	        }
+
+				variables.results[getCurrentTest()][description] = createResult(false);
+			}
 		}
 
-        this.afterAssert(argumentCollection = variables.results[getCurrentTest()][description]);
+		this.afterAssert(argumentCollection = variables.results[getCurrentTest()][description]);
 		this.setError('');
-        return variables.results[getCurrentTest()][description].isPassed();
-    }
+
+		return variables.results[getCurrentTest()][description].isPassed();
+	}
 
 	public void function setCurrentTest(required string testMethod) output=false {
 		VARIABLES.currentTestMethod = ARGUMENTS.testMethod;
