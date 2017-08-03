@@ -24,6 +24,7 @@ body {
 	width: 100%;
 }
 
+
 h1
 {
 	width: 100%;
@@ -70,7 +71,8 @@ footer {
 	height: 6em;
 	left: 0;
 	padding: 0.5% 2.5% 0% 2.5%;
-	
+	position: absolute;
+
 	width: 100%;
 
 }
