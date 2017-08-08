@@ -16,16 +16,18 @@
 	<!---
 	||	 Name of the data source from which the query retrieves data.
 	||	--->
-
 	<cfset THIS.sessionManagement = true >
 	<cfset THIS.sessionTimeout = createTimeSpan(0, 0, 30, 0) >
 
 	<cfset THIS.setClientCookies = true >
 	<cfset THIS.setDomainCookies = false >
 
+	<!--- Default test root directory, should be the route of the application your intending to test --->
 	<cfset THIS.mappings['/testroot'] = expandPath('./') />
 
 	<cfsetting showDebugOutput = "true" requestTimeOut = "30">
+
+	<cfinclude template="_functions.cfm" />
 
 	<cffunction name="onTestApplicationStart" access="public" returntype="void" output="false"></cffunction>
 	<cffunction name="OnApplicationStart" access="public" returntype="boolean" output="false" hint="Fires when the application is first created.">
@@ -33,16 +35,25 @@
 		<cfset APPLICATION['cfharness'] = VARIABLES />
 		<cfset APPLICATION['cfharnessLog'] = "TestSuite" />
 
-		<cfset onTestApplicationStart() />
+		<cftry>
+			<cfset onTestApplicationStart() />
+			<cfcatch>
+				<cfset new log('Failed to run `onTestApplicationStart`, #cfcatch.message#') />
+			</cfcatch>
+		</cftry>
 
 		<cfreturn true />
 	</cffunction>
 
-
 	<cffunction name="onTestApplicationEnd" access="public" returntype="void" output="false"></cffunction>
 	<cffunction name="OnApplicationEnd" access="public" returntype="void" output="false" hint="Fires when the application is terminated.">
 			<cfargument name="ApplicationScope" type="struct" required="false" default="#StructNew()#" />
-			<cfset onTestApplicationEnd(ApplicationScope) />
+			<cftry>
+				<cfset onTestApplicationEnd(ApplicationScope) />
+				<cfcatch>
+					<!--- <cfset log(text='Failes to run `onTestApplicationEnd`, #cfcatch.message#') /> --->
+				</cfcatch>
+			</cftry>
 			<cfreturn />
 		</cffunction>
 
@@ -59,7 +70,13 @@
 	<cffunction name="OnRequestStart" access="public" returntype="boolean" output="true" hint="Fires at first part of page processing.">
 		<cfargument name="TargetPage" type="string" required="true"/>
 
-		<cfset setupRequest() />
+		<cftry>
+			<cfset setupRequest() />
+			<cfcatch>
+				<!--- <cfset log(text=cfcatch.message & ' ' & cfcatch.detail) /> --->
+				<cfset throw(message='Error setting up request', detail=cfcatch.message) />
+			</cfcatch>
+		</cftry>
 
 		<cfif arguments.TargetPage CONTAINS "run.cfm">
 			<cfset var testPath = ListQualify(CGI.path_info, '' , '/') />
@@ -113,6 +130,7 @@
 				for (test in REQUEST['tests']) {
 					setResults(REQUEST.TESTS[test].run());
 				}
+				application.cfharness.setCurrentTest(javacast('null', 0));
 			</cfscript>
 
 			<cflog file="#APPLICATION['cfharnessLog']#" application="yes" text="Test Suite run: Total: #REQUEST.passed + REQUEST.failed#, #REQUEST.passed# passes, #REQUEST.failed# failures." />
@@ -169,9 +187,12 @@
 		<cfreturn true />
 	</cffunction>
 
-	<!--- <cffunction access="public" returntype="void" name="onAbort" output="true" >
+	<cffunction access="public" returntype="void" name="onAbort" output="true" >
 		<cfargument name="targetPage" type="any" required="true" />
-	</cffunction> --->
+		<cfif !isNull(application.cfharness.getCurrentTest()) >
+			<cfset application.cfharness.getCurrentTest().tearDown() />
+		</cfif>
+	</cffunction>
 
 	<cffunction name="OnError" access="public" returntype="void" output="true" hint="Fires when an exception occures that is not caught by a try/catch.">
 		<cfargument name="Exception" type="any" required="true" />
@@ -203,8 +224,8 @@
 			<cfset THIS.onRequestEnd('error.cfm') />
 
 			<cfcatch>
-				<cfdump label="Initial Exception: #arguments.eventName#" var="#exception#" abort="false"/>
-				<cfdump label="Error in exception handler" var="#cfcatch#" abort="false"/>
+				<cfdump label="Initial Exception: #arguments.eventName#" var="#exception#" abort="false" format='classic'/>
+				<cfdump label="Error in exception handler" var="#cfcatch#" abort="false" format='classic'/>
 			</cfcatch>
 		</cftry>
 		<cfreturn />
@@ -213,12 +234,12 @@
 	<cfscript>
 		public void function setCurrentTest(testObject) {
 			arrayAppend(REQUEST.context.previousTests, REQUEST.context.currentTest);
-			REQUEST.context.currentTest = testObject;
+			REQUEST.context.currentTest = (!isNull(testObject)) ? testObject : javacast('null', 0);
 			return;
 		}
 
-		public component function getCurrentTest() {
-			return REQUEST.context.currentTest
+		public any function getCurrentTest() {
+			return (!isNull(REQUEST.context.currentTest)) ? REQUEST.context.currentTest : javacast('null', 0);
 		}
 
 		private void function setupRequest() {

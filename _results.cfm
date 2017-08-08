@@ -28,8 +28,8 @@
 								<ul>
 									<cfloop array="#testSet#" item="i">
 										<li>
-											#i.getTest()# :
-											<span class="#i.getResult()#">
+											<span class="test-result__test">#i.getTest()# :</span><!--
+									>--><span class="test-result__result test-result__result--#i.getResult()#">
 												#i.getResult()#
 												<cfif i.getResult() IS "Failed">
 													<cfif isJson(i.getReason())>
