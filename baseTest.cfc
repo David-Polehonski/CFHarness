@@ -85,17 +85,17 @@ component name="baseTest" output=false accessors=true {
 			assert(false, "An unexpected error was thrown during tearDown, #Ex.message#");
 			return this;
 		}
-
+		
 		return this;
 	}
 
-  private void function setup () output="false" {
+  public void function setup () output="false" {
       /* Call any setup */
       THIS.onSetup();
       return;
   }
 
-  private void function tearDown () output="false" {
+  public void function tearDown () output="false" {
       /* Call any tearDowns */
 
       THIS.onTearDown();
