@@ -13,7 +13,7 @@
 						Results #(testName != '')? 'for ' & testName & ' test' : ''#:
 					</h1>
 					<ul>
-						<cfloop collection="#REQUEST.results[testName]#" index="setName" item="testSet">
+						<cfloop collection="#REQUEST.results[testName]#" index="setName" item="description">
 							<li>
 								<cfif structKeyExists(REQUEST.tests[testName], setName) >
 									<cfset d = GetMetaData(REQUEST.tests[testName][setName]) />
@@ -26,7 +26,7 @@
 									#setName#
 								</cfif>
 								<ul>
-									<cfloop array="#testSet#" item="i">
+									<cfloop array="#description#" item="i">
 										<li>
 											<span class="test-result__test">#i.getTest()# :</span><!--
 									>--><span class="test-result__result test-result__result--#i.getResult()#">

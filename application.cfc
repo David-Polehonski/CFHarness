@@ -126,6 +126,7 @@
 
 		<cfif NOT structKeyExists(REQUEST, "response")>
 			<cflog file="#APPLICATION['cfharnessLog']#" application="yes" text="Run all Tests." />
+
 			<cfscript>
 				for (test in REQUEST['tests']) {
 					setResults(REQUEST.TESTS[test].run());
@@ -143,6 +144,7 @@
 			</cfif>
 
 			<cflog file="#APPLICATION['cfharnessLog']#" application="yes" text="Building Results" />
+
 			<cfsavecontent variable="REQUEST.response">
 				<cfinclude template="_results.cfm" />
 			</cfsavecontent>
