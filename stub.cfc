@@ -1,5 +1,5 @@
-component name="stub" accessors="true" initmethod="_init" {
-	public function _init(string cfcStub){
+component name="stub" accessors="true" {
+	public function init(string cfcStub){
 		if (StructKeyExists(arguments, "cfcStub")) {
 			var baseObj = createObject('component', '#cfcStub#');
 
@@ -10,10 +10,8 @@ component name="stub" accessors="true" initmethod="_init" {
 					createProperty(GetMetaData(baseObj[i]));
 				}
 			}
-
-			//VARIABLES.baseObj = baseObj;
 		}
-		return THIS;
+		return this;
 	}
 
 	private void function createFunction(baseMetaName) {
@@ -27,7 +25,7 @@ component name="stub" accessors="true" initmethod="_init" {
 			}
 		}
 	}
-	
+
 	private void function createProperty() {
 		WriteDump(baseMeta);
 	}

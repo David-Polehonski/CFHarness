@@ -85,7 +85,7 @@ component name="baseTest" output=false accessors=true {
 			assert(false, "An unexpected error was thrown during tearDown, #Ex.message#");
 			return this;
 		}
-		
+
 		return this;
 	}
 
@@ -165,9 +165,9 @@ component name="baseTest" output=false accessors=true {
 	}
 
 	/* Events for overriding */
-    public void function onSetup (){ return; }
-    public void function beforeAssert (){ return; }
-    public void function afterAssert (){ return; }
-    public void function onTearDown (){ return; }
+	public void function onSetup (){ return; }
+	public void function beforeAssert (){ return; }
+	public void function afterAssert (){ return; }
+	public void function onTearDown (){ return; }
 
 }

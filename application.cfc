@@ -32,15 +32,17 @@
 	<cffunction name="onTestApplicationStart" access="public" returntype="void" output="false"></cffunction>
 	<cffunction name="OnApplicationStart" access="public" returntype="boolean" output="false" hint="Fires when the application is first created.">
 
-		<cfset APPLICATION['cfharness'] = VARIABLES />
-		<cfset APPLICATION['cfharnessLog'] = "TestSuite" />
+		<cfscript>
+			application['cfharnessLog'] = "TestSuite";
+			application['cfharness'] = variables;
 
-		<cftry>
-			<cfset onTestApplicationStart() />
-			<cfcatch>
-				<cfset new log('Failed to run `onTestApplicationStart`, #cfcatch.message#') />
-			</cfcatch>
-		</cftry>
+			new system();
+			try {
+				onTestApplicationStart();
+			} catch (any E) {
+				new log('Failed to run `onTestApplicationStart`, #cfcatch.message#');
+			}
+		</cfscript>
 
 		<cfreturn true />
 	</cffunction>
@@ -189,7 +191,7 @@
 		<cfreturn true />
 	</cffunction>
 
-	<cffunction access="public" returntype="void" name="onAbort" output="true" >
+	<cffunction  name="onAbort" access="public" returntype="void" output="true" >
 		<cfargument name="targetPage" type="any" required="true" />
 		<cfif !isNull(application.cfharness.getCurrentTest()) >
 			<cfset application.cfharness.getCurrentTest().tearDown() />
@@ -271,6 +273,7 @@
 				}
 			}
 		}
+
 	</cfscript>
 
 </cfcomponent>
