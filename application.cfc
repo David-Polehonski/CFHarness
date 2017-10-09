@@ -8,7 +8,7 @@
 ||	--->
 <cfcomponent displayname="OC Test Harness" output="true">
 	<cfset THIS.name = "Test Suite Application" >
-	<cfset THIS.applicationTimeout = createTimeSpan(0, 0, 0, 5) >
+	<cfset THIS.applicationTimeout = createTimeSpan(0, 0, 15, 0) >
 
 	<cfset THIS.clientManagement = true >
 	<cfset THIS.clientStorage = "cookie" >
@@ -25,7 +25,7 @@
 	<!--- Default test root directory, should be the route of the application your intending to test --->
 	<cfset THIS.mappings['/testroot'] = expandPath('./') />
 
-	<cfsetting showDebugOutput = "true" requestTimeOut = "30">
+	<cfsetting showDebugOutput = "true" requestTimeOut = "60">
 
 	<cfinclude template="_functions.cfm" />
 
