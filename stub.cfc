@@ -1,29 +1,22 @@
 component name="stub" accessors="true" {
-	public function init(string cfcStub){
-		if (StructKeyExists(arguments, "cfcStub")) {
-			var baseObj = createObject('component', '#cfcStub#');
 
-			for(var i in baseObj) {
-				if (IsCustomFunction(baseObj[i])){
-					createFunction(GetMetaData(baseObj[i]).name);
-				} else {
-					createProperty(GetMetaData(baseObj[i]));
-				}
-			}
-		}
+	property object base;
+
+	public function init () {
+		createFunction('init'); // Force override init method.
 		return this;
 	}
 
 	private void function createFunction(baseMetaName) {
-		THIS[baseMetaName] = function () {
+		this[baseMetaName] = function () {
 			param name="arguments" default={};
-			if (StructKeyExists(THIS, "on#baseMetaName#")) {
+
+			if (StructKeyExists(this, "on#baseMetaName#")) {
 				return this["on#baseMetaName#"](argumentCollection=arguments);
 			} else {
-				//	Could replace with defaults later?
 				return JavaCast('null', 0);
 			}
-		}
+		};
 	}
 
 	private void function createProperty() {
@@ -34,8 +27,10 @@ component name="stub" accessors="true" {
 		if (!StructKeyExists(this, arguments.functionName) OR !IsCustomFunction(this[arguments.functionName])){
 			createFunction(arguments.functionName);
 		}
-		THIS['on#ARGUMENTS.functionName#'] = callback;
-		return THIS;
+
+		this['on#ARGUMENTS.functionName#'] = callback;
+
+		return this;
 	}
 
 }

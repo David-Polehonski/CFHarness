@@ -8,7 +8,9 @@ component name='system' output='false' {
 	property name='scratchDirectory';
 
 	public system function init (required string scratchDirectoryPath=getDirectoryFromPath( getCurrentTemplatePath() ) & '/_scratch') output='false' {
+		
 		variables.errorCodePrefix = '5';
+
 		if (!application.keyExists('cfharness')) {
 				throw( new testException(message='Cannot instantiate cfharness.system object outside of a cfharness application context',detail='Key `cfharness` was not found in the application scope when the system object was instantiated', errorCode=variables.errorCodePrefix & '1') );
 		}

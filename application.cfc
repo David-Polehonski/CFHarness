@@ -37,10 +37,11 @@
 			application['cfharness'] = variables;
 
 			new system();
+
 			try {
 				onTestApplicationStart();
 			} catch (any E) {
-				new log('Failed to run `onTestApplicationStart`, #cfcatch.message#');
+				WriteDump(E); abort;
 			}
 		</cfscript>
 
@@ -53,7 +54,7 @@
 			<cftry>
 				<cfset onTestApplicationEnd(ApplicationScope) />
 				<cfcatch>
-					<!--- <cfset log(text='Failes to run `onTestApplicationEnd`, #cfcatch.message#') /> --->
+					<cfset writeDump(cfcatch) />
 				</cfcatch>
 			</cftry>
 			<cfreturn />
@@ -119,7 +120,7 @@
 	<cffunction name="OnRequest" access="public" returntype="void" output="true" hint="Fires after pre page processing is complete.">
 		<cfargument name="TargetPage" type="string" required="true" />
 
-		<cflog file="#APPLICATION['cfharnessLog']#" application="yes" text="Starting 'OnRequest'" />
+		<cflog file="#application['cfharnessLog']#" application="yes" text="Starting 'OnRequest'" />
 
 		<cfparam name="REQUEST.passed" default="0" >
 		<cfparam name="REQUEST.failed" default="0" >
@@ -202,7 +203,7 @@
 		<cfargument name="Exception" type="any" required="true" />
 		<cfargument name="EventName" type="string" required="false" default="" />
 
-		<cflog file="#APPLICATION['cfharnessLog']#" application="yes" text="Error: #Exception.message#" />
+		<cflog file="#application['cfharnessLog']#" application="yes" text="Error: #Exception.message#" />
 
 		<cfset var assertion = "Test failed ">
 		<cftry>
