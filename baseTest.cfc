@@ -13,20 +13,21 @@ component name="baseTest" output=false accessors=true {
 
 	property string testName;
 
-	public any function init (required string testName=THIS.testName) output="false" {
+	public any function init (required string testName=this.testName) output="false" {
 
-		THIS.setTestName(ARGUMENTS.testName);
+		this.setTestName(arguments.testName);
 
-		VARIABLES.tests = structNew('linked');
-		VARIABLES.results = structNew('linked');
+		variables.tests = structNew('linked');
+		variables.results = structNew('linked');
+		variables.rc = application.cfharness.system.getRequest();
+		variables.rc.queueTest(this);
 
-		REQUEST.TESTS[THIS.getTestName()] = THIS; // Store reference into request.
-        return THIS;
-    }
+		return this;
+	}
 
 	public component function run() output=false {
 
-		application.cfharness.setCurrentTest(this);
+		variables.rc.setCurrentTest(this);
 
 		try {
 			variables.setup();

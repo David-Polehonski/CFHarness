@@ -6,82 +6,72 @@
 ||
 ||	CHANGELOG:
 ||	--->
-<cfcomponent displayname="OC Test Harness" output="true">
-	<cfset THIS.name = "Test Suite Application" >
-	<cfset THIS.applicationTimeout = createTimeSpan(0, 0, 15, 0) >
+<cfcomponent displayname="CF Harness Test Suite" output="true">
+	<cfscript>
+		this.name = "CF Harness Test Suite";
+		this.applicationTimeout = createTimeSpan(0, 0, 15, 0);
 
-	<cfset THIS.clientManagement = true >
-	<cfset THIS.clientStorage = "cookie" >
+		this.clientManagement = true;
+		this.clientStorage = "cookie";
 
-	<!---
-	||	 Name of the data source from which the query retrieves data.
-	||	--->
-	<cfset THIS.sessionManagement = true >
-	<cfset THIS.sessionTimeout = createTimeSpan(0, 0, 30, 0) >
+		this.sessionManagement = true;
+		this.sessionTimeout = createTimeSpan(0, 0, 30, 0);
 
-	<cfset THIS.setClientCookies = true >
-	<cfset THIS.setDomainCookies = false >
+		this.setClientCookies = true;
+		this.setDomainCookies = false;
 
-	<!--- Default test root directory, should be the route of the application your intending to test --->
-	<cfset THIS.mappings['/testroot'] = expandPath('./') />
+		this.mappings['/cfharness'] = getDirectoryFromPath( getCurrentTemplatePath() ) ;
+		this.mappings['/testroot'] = expandPath('./');
 
-	<cfsetting showDebugOutput = "true" requestTimeOut = "60">
+		include "settings.cfm";
 
-	<cfinclude template="_functions.cfm" />
-
-	<cffunction name="onTestApplicationStart" access="public" returntype="void" output="false"></cffunction>
-	<cffunction name="OnApplicationStart" access="public" returntype="boolean" output="false" hint="Fires when the application is first created.">
-
-		<cfscript>
+		//	Test hook for application start
+		public void function onTestApplicationStart () output='false' { }
+		public boolean function onApplicationStart () output='false' {
 			application['cfharnessLog'] = "TestSuite";
-			application['cfharness'] = variables;
+			application['cfharness'] = {};
+			application['cfharness']['requestCount'] = 1; // How many requests in a particular application life cycle.
 
-			new system();
+			new core.system();
 
 			try {
 				onTestApplicationStart();
 			} catch (any E) {
 				WriteDump(E); abort;
 			}
-		</cfscript>
+			return true;
+		}
 
-		<cfreturn true />
-	</cffunction>
+		public void function onTestApplicationEnd () output='false' { }
+		public boolean function OnApplicationEnd (required struct ApplicationScope = structNew()) output='false' {
+			try {
+				onTestApplicationEnd( ApplicationScope );
+			} catch (any e) {
+				writeDump(label='OnApplicationEnd', var=e);
+			}
+			return true;
+		}
 
-	<cffunction name="onTestApplicationEnd" access="public" returntype="void" output="false"></cffunction>
-	<cffunction name="OnApplicationEnd" access="public" returntype="void" output="false" hint="Fires when the application is terminated.">
-			<cfargument name="ApplicationScope" type="struct" required="false" default="#StructNew()#" />
-			<cftry>
-				<cfset onTestApplicationEnd(ApplicationScope) />
-				<cfcatch>
-					<cfset writeDump(cfcatch) />
-				</cfcatch>
-			</cftry>
-			<cfreturn />
-		</cffunction>
-
-		<cffunction name="OnSessionStart" access="public" returntype="void" output="false" hint="Fires when the session is first created.">
-			<cfreturn />
-		</cffunction>
-
-		<cffunction name="OnSessionEnd" access="public"  returntype="void" output="false" hint="Fires when the session is terminated.">
-			<cfargument name="SessionScope" type="struct" required="true" />
-			<cfargument name="ApplicationScope" type="struct" required="false" />
-			<cfreturn />
-		</cffunction>
+		public void function OnSessionStart () output='false' { }
+		public void function OnSessionEnd (required struct SessionScope, required struct ApplicationScope = structNew()) output='false' { }
+	</cfscript>
 
 	<cffunction name="OnRequestStart" access="public" returntype="boolean" output="true" hint="Fires at first part of page processing.">
 		<cfargument name="TargetPage" type="string" required="true"/>
-
+		<cfif url.keyExists('reboot') >
+			<cfset application['cfharness']['system'].reset() />
+		</cfif>
 		<cftry>
-			<cfset setupRequest() />
+			<cfset application['cfharness']['requestCount'] += 1 />
+			<cfset variables.rc = application['cfharness']['system'].getRequest() />
 			<cfcatch>
-				<!--- <cfset log(text=cfcatch.message & ' ' & cfcatch.detail) /> --->
+				<cfdump var="#cfcatch#" abort="true" />
 				<cfset throw(message='Error setting up request', detail=cfcatch.message) />
 			</cfcatch>
 		</cftry>
 
 		<cfif arguments.TargetPage CONTAINS "run.cfm">
+
 			<cfset var testPath = ListQualify(CGI.path_info, '' , '/') />
 			<cfif testPath IS NOT "">
 				<cfif FileExists(Expandpath('/testroot/#testPath#.cfc')) >
@@ -89,6 +79,7 @@
 				<cfelse>
 					<cfset THIS.onMissingTemplate(ListLast(testPath, '/')) />
 				</cfif>
+
 			<cfelse>
 				<!---
 				||	RUN ALL TESTS
@@ -122,19 +113,12 @@
 
 		<cflog file="#application['cfharnessLog']#" application="yes" text="Starting 'OnRequest'" />
 
-		<cfparam name="REQUEST.passed" default="0" >
-		<cfparam name="REQUEST.failed" default="0" >
-
-		<cfinclude template="_functions.cfm" />
-
 		<cfif NOT structKeyExists(REQUEST, "response")>
 			<cflog file="#APPLICATION['cfharnessLog']#" application="yes" text="Run all Tests." />
 
 			<cfscript>
-				for (test in REQUEST['tests']) {
-					setResults(REQUEST.TESTS[test].run());
-				}
-				application.cfharness.setCurrentTest(javacast('null', 0));
+				variables.rc.run();
+				variables.rc.finalize();
 			</cfscript>
 
 			<cflog file="#APPLICATION['cfharnessLog']#" application="yes" text="Test Suite run: Total: #REQUEST.passed + REQUEST.failed#, #REQUEST.passed# passes, #REQUEST.failed# failures." />
@@ -142,16 +126,16 @@
 			<cfset var headers = GetHttpRequestData().headers />
 
 			<cfif StructKeyExists(headers, "accept") >
-				<cfset REQUEST.responseType = listFirst(headers["accept"], ',') />
-				<cflog file="#APPLICATION['cfharnessLog']#" application="yes" text="Test Suite Info: Producing results #REQUEST.responseType#." />
+				<cfset variables.rc.setResponseType(listFirst(headers["accept"], ',')) />
+				<cflog file="#APPLICATION['cfharnessLog']#" application="yes" text="Test Suite Info: Producing results #variables.rc.getResponseType()#." />
 			</cfif>
 
 			<cflog file="#APPLICATION['cfharnessLog']#" application="yes" text="Building Results" />
 
-			<cfsavecontent variable="REQUEST.response">
+			<cfsavecontent variable="response">
 				<cfinclude template="_results.cfm" />
 			</cfsavecontent>
-
+			<cfset variables.rc.setResponse( response ) />
 		</cfif>
 
 		<cfreturn />
@@ -160,9 +144,9 @@
 	<cffunction name="OnRequestEnd" access="public" returntype="void" output="true" hint="Fires after the page processing is complete.">
 		<cfargument name="TargetPage" type="string" required="true" />
 
-		<cfinclude template="_functions.cfm" />
 		<cflog file="#APPLICATION['cfharnessLog']#" application="yes" text="Streaming Request Response. #request.keyExists('response')#" />
-		<cfset stream(REQUEST) />
+		<cfset response = variables.rc.getResponse() />
+		<cfset response.stream() />
 		<cfreturn />
 	</cffunction>
 
@@ -171,19 +155,20 @@
 		<cfargument name="TargetPage" type="string" required="true" hint="I am the requested script name (but I do not exist on the physical file system)."/>
 		<cfswitch expression="#listLast(TargetPage,'/')#">
 			<cfcase value="css.cfm">
-					<cfsavecontent variable="REQUEST.response">
+					<cfsavecontent variable="cssResponse">
 						<cfinclude template="_assets/normalize.css" />
 						<cfinclude template="_assets/_defaults.css" />
 					</cfsavecontent>
 					<!--- Now minify if possible! --->
-					<cfset REQUEST.response = REQUEST.response.replaceAll("(?s)/\*.+?\*/", "") />
-					<cfset REQUEST.response = REQUEST.response.replaceAll("[\r\n\t]", " ") />
-					<cfset REQUEST.response = REQUEST.response.replaceAll(" +", " ") />
-					<cfset REQUEST.responseType  = "text/css" />
+					<cfset cssResponse = cssResponse.replaceAll("(?s)/\*.+?\*/", "") />
+					<cfset cssResponse = cssResponse.replaceAll("[\r\n\t]", " ") />
+					<cfset cssResponse = cssResponse.replaceAll(" +", " ") />
+					<cfset variables.rc.setResponseType("text/css") />
+					<cfset variables.rc.setResponse(cssResponse) />
 			</cfcase>
 			<cfcase value="icon.cfm">
-				<cfset REQUEST.response = toBinary(imageRead('_assets/cf-harness-icon.png')) />
-				<cfset REQUEST.responseType  = "image/png" />
+				<cfset variables.rc.setResponseType("image/png") />
+				<cfset variables.rc.setResponse(toBinary(imageRead('/cfharness/_assets/cf-harness-icon.png'))) />
 			</cfcase>
 			<cfdefaultcase>
 				<cfthrow message="Invalid Test definition" detail="#ARGUMENTS.TargetPage# is an invalid test definition, file not found [#ARGUMENTS.TargetPage#.cfc]" />
@@ -194,9 +179,18 @@
 
 	<cffunction  name="onAbort" access="public" returntype="void" output="true" >
 		<cfargument name="targetPage" type="any" required="true" />
-		<cfif !isNull(application.cfharness.getCurrentTest()) >
-			<cfset application.cfharness.getCurrentTest().tearDown() />
+		<cfif !isNull(variables.rc.getCurrentTest()) >
+			<cfset variables.rc.getCurrentTest().tearDown() />
+			<cfset variables.rc.finalize() />
 		</cfif>
+<!--- 
+		<cfsavecontent variable="response">
+			<cfinclude template="_results.cfm" />
+		</cfsavecontent>
+		<cfset variables.rc.setResponse( response ) />
+
+		<cfset response = variables.rc.getResponse() />
+		<cfset response.stream() /> --->
 	</cffunction>
 
 	<cffunction name="OnError" access="public" returntype="void" output="true" hint="Fires when an exception occures that is not caught by a try/catch.">
@@ -213,7 +207,7 @@
 				<cfset assertion &= 'unexpectedly'>
 			</cfif>
 
-			<cfset testContext = getCurrentTest() />
+			<cfset testContext = variables.rc.getCurrentTest() />
 
 			<cfif isDefined('Exception.detail') AND Exception.detail IS NOT "" >
 				<cfset testContext.setError(Exception.detail)/>
@@ -222,8 +216,10 @@
 				<cfset testContext.setError("#e.template#:#e.line# <br/> #e.codePrintHTML#")/>
 			</cfif>
 
-			<cfset testContext.setCurrentTest('Application Exception') />
+			<cfset testContext.setCurrentTest( 'Application Exception' ) />
 			<cfset testContext.assert(false, assertion) />
+
+			<!--- <cfset variables.rc.finalize() /> --->
 
 			<cfset THIS.onRequest('error.cfm') />
 			<cfset THIS.onRequestEnd('error.cfm') />
@@ -233,48 +229,8 @@
 				<cfdump label="Error in exception handler" var="#cfcatch#" abort="false" format='classic'/>
 			</cfcatch>
 		</cftry>
+
 		<cfreturn />
 	</cffunction>
-
-	<cfscript>
-		public void function setCurrentTest(testObject) {
-			arrayAppend(REQUEST.context.previousTests, REQUEST.context.currentTest);
-			REQUEST.context.currentTest = (!isNull(testObject)) ? testObject : javacast('null', 0);
-			return;
-		}
-
-		public any function getCurrentTest() {
-			return (!isNull(REQUEST.context.currentTest)) ? REQUEST.context.currentTest : javacast('null', 0);
-		}
-
-		private void function setupRequest() {
-			request.tests = structNew('linked');
-			request.results = structNew('linked');
-			request.passed = 0;
-			request.failed = 0;
-
-			request.context = {
-				"previousTests" = arrayNew(1),
-				"currentTest" = new BaseTest('Application Initialization')
-			};
-		}
-
-		private void function setResults(required component test) output=false {
-			var results = test.getResults();
-
-			if (test.getTests().count() GT 0) {
-
-				REQUEST.RESULTS[test.getTestName()] = structNew('linked');
-
-				for(var set in test.getTests()) {
-					REQUEST.RESULTS[test.getTestName()][set] = [];
-					for(t in test.getTests()[set]){
-						REQUEST.RESULTS[test.getTestName()][set].append(new TestResult(t, results[set][t]));
-					}
-				}
-			}
-		}
-
-	</cfscript>
 
 </cfcomponent>

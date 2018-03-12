@@ -1,38 +1,28 @@
 component name="TestResult" output="false" {
-    public TestResult function init (required string description, required struct r) {
+	public TestResult function init (required string description, required struct r) {
 
-        VARIABLES.test = description;
+		variables.test = description;
+		variables.result = r.result;
 
-        VARIABLES.result = r.result;
+		if (structKeyExists(r, 'reason')) {
+			variables.reason = r.reason;
+		} else{
+			variables.reason = "";
+		}
 
-        if (structKeyExists(r, 'reason')) {
-            VARIABLES.reason = r.reason;
-        } else{
-            VARIABLES.reason = "";
-        }
+		return this;
+	}
 
-        switch (r.result) {
-        case "Passed":
-            REQUEST.passed += 1;
-            break;
-        case "Failed":
-            REQUEST.failed += 1;
-            break;
-        }
+	public string function getTest() {
+		return variables.test;
+	}
 
-        return THIS;
-    }
+	public string function getResult() {
+		return variables.result;
+	}
 
-    public string function getTest() {
-        return VARIABLES.test;
-    }
-
-    public string function getResult() {
-        return VARIABLES.result;
-    }
-
-    public string function getReason() {
-        return VARIABLES.reason;
-    }
+	public string function getReason() {
+		return variables.reason;
+	}
 
 }
