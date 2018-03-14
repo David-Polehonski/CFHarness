@@ -28,16 +28,19 @@
 		//	Test hook for application start
 		public void function onTestApplicationStart () output='false' { }
 		public boolean function onApplicationStart () output='false' {
-			application['cfharnessLog'] = "TestSuite";
-			application['cfharness'] = {};
-			application['cfharness']['requestCount'] = 1; // How many requests in a particular application life cycle.
-
-			new core.system();
-
 			try {
+
+				application['cfharnessLog'] = "TestSuite";
+				application['cfharness'] = {};
+				application['cfharness']['requestCount'] = 1; // How many requests in a particular application life cycle.
+
+				cfharness.core.Log::log('Starting CFHarness Application');
+				new core.system();
+
 				onTestApplicationStart();
 			} catch (any E) {
-				WriteDump(E); abort;
+				cfharness.core.Log::fatal('Could not start CFHarness Application');
+				abort;
 			}
 			return true;
 		}
@@ -47,7 +50,7 @@
 			try {
 				onTestApplicationEnd( ApplicationScope );
 			} catch (any e) {
-				writeDump(label='OnApplicationEnd', var=e);
+				cfharness.core.Log::fatal('Could not tidy up CFHarness Application');
 			}
 			return true;
 		}
@@ -58,20 +61,25 @@
 
 	<cffunction name="OnRequestStart" access="public" returntype="boolean" output="true" hint="Fires at first part of page processing.">
 		<cfargument name="TargetPage" type="string" required="true"/>
+
+		<cfif !application.keyExists('cfharness') >
+			<cfabort />
+		</cfif>
+
 		<cfif url.keyExists('reboot') >
 			<cfset application['cfharness']['system'].reset() />
 		</cfif>
+
 		<cftry>
 			<cfset application['cfharness']['requestCount'] += 1 />
 			<cfset variables.rc = application['cfharness']['system'].getRequest() />
 			<cfcatch>
-				<cfdump var="#cfcatch#" abort="true" />
 				<cfset throw(message='Error setting up request', detail=cfcatch.message) />
 			</cfcatch>
 		</cftry>
 
 		<cfif arguments.TargetPage CONTAINS "run.cfm">
-
+			<cfset variables.rc.setEndpoint( 'testRunner' ) />
 			<cfset var testPath = ListQualify(CGI.path_info, '' , '/') />
 			<cfif testPath IS NOT "">
 				<cfif FileExists(Expandpath('/testroot/#testPath#.cfc')) >
@@ -79,7 +87,6 @@
 				<cfelse>
 					<cfset THIS.onMissingTemplate(ListLast(testPath, '/')) />
 				</cfif>
-
 			<cfelse>
 				<!---
 				||	RUN ALL TESTS
@@ -92,6 +99,9 @@
 					</cfif>
 				</cfloop>
 			</cfif>
+		<cfelseif arguments.TargetPage CONTAINS "remote.cfm">
+			<cfset variables.rc.setEndpoint( 'MockService' ) />
+			<cfreturn true />
 		<cfelse>
 			<cftry>
 				<cfset THIS.onMissingTemplate(ARGUMENTS.TargetPage) />
@@ -104,14 +114,18 @@
 		<cfreturn true />
 	</cffunction>
 
-	<!---
-	||	This function should only be overwritten if needed.
-	||	--->
-
 	<cffunction name="OnRequest" access="public" returntype="void" output="true" hint="Fires after pre page processing is complete.">
 		<cfargument name="TargetPage" type="string" required="true" />
 
 		<cflog file="#application['cfharnessLog']#" application="yes" text="Starting 'OnRequest'" />
+		<cfif variables.rc.getEndpoint() is "MockService" >
+			<!---Its a proxy test, attempt resolve the call --->
+			<cfset cfharness.core.Log::log("MockService API endpoint") />
+			<cfset mockService = new cfharness.core.MockService() />
+			<cfset var response = mockService.request( cgi.path_info ) />
+			<cfset response.stream() />
+			<cfreturn />
+		</cfif>
 
 		<cfif NOT structKeyExists(REQUEST, "response")>
 			<cflog file="#APPLICATION['cfharnessLog']#" application="yes" text="Run all Tests." />
@@ -143,13 +157,11 @@
 
 	<cffunction name="OnRequestEnd" access="public" returntype="void" output="true" hint="Fires after the page processing is complete.">
 		<cfargument name="TargetPage" type="string" required="true" />
-
-		<cflog file="#APPLICATION['cfharnessLog']#" application="yes" text="Streaming Request Response. #request.keyExists('response')#" />
+		<cfset cfharness.core.Log::log("Streaming Request Response. #request.keyExists('response')#") />
 		<cfset response = variables.rc.getResponse() />
 		<cfset response.stream() />
 		<cfreturn />
 	</cffunction>
-
 
 	<cffunction name="onMissingTemplate" access="public" returntype="boolean" output="true" hint="I execute if the requested template does not exist.">
 		<cfargument name="TargetPage" type="string" required="true" hint="I am the requested script name (but I do not exist on the physical file system)."/>
@@ -179,24 +191,23 @@
 
 	<cffunction  name="onAbort" access="public" returntype="void" output="true" >
 		<cfargument name="targetPage" type="any" required="true" />
+
+		<cfif !application.keyExists('cfharness') ><cfreturn /></cfif>
+
 		<cfif !isNull(variables.rc.getCurrentTest()) >
 			<cfset variables.rc.getCurrentTest().tearDown() />
 			<cfset variables.rc.finalize() />
 		</cfif>
-<!--- 
-		<cfsavecontent variable="response">
-			<cfinclude template="_results.cfm" />
-		</cfsavecontent>
-		<cfset variables.rc.setResponse( response ) />
-
-		<cfset response = variables.rc.getResponse() />
-		<cfset response.stream() /> --->
 	</cffunction>
 
 	<cffunction name="OnError" access="public" returntype="void" output="true" hint="Fires when an exception occures that is not caught by a try/catch.">
 		<cfargument name="Exception" type="any" required="true" />
 		<cfargument name="EventName" type="string" required="false" default="" />
 
+		<cfif !application.keyExists('cfharness') >
+			<cfdump var="#Exception#"/>
+			<cfabort />
+		</cfif>
 		<cflog file="#application['cfharnessLog']#" application="yes" text="Error: #Exception.message#" />
 
 		<cfset var assertion = "Test failed ">
@@ -229,7 +240,6 @@
 				<cfdump label="Error in exception handler" var="#cfcatch#" abort="false" format='classic'/>
 			</cfcatch>
 		</cftry>
-
 		<cfreturn />
 	</cffunction>
 

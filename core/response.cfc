@@ -2,7 +2,7 @@
 component name='response' output='false' {
 
 	public Response function init (required struct responseScope) output='false' {
-		this.responseScope = request; // Copy reference to reference struct;
+		this.responseScope = arguments.responseScope;
 		if (isNull(this.responseScope.response)) {
 			this.responseScope.response = "";
 		}
@@ -17,6 +17,9 @@ component name='response' output='false' {
 			var binaryResponse = responseScope.response;
 		}
 		// Add cache control headers
+		if (!isNull(responseScope.status)) {
+			cfheader(statuscode=responseScope.status.code, statustext=responseScope.status.text);
+		}
 		cfheader(name="Cache-Control", value="max-age=120");
 		cfheader(name="Etag", value="#hash(binaryResponse, 'MD5')#");
 		cfcontent(type="#(NOT structKeyExists(responseScope, 'responseType'))? 'text/html' : responseScope['responseType'] #", reset="true", variable="#binaryResponse#");

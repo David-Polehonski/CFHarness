@@ -52,6 +52,18 @@ component name='system' output='false' {
 		}
 	}
 
+	public void function registerServiceHandler (required string serviceUrl, required string componentPath) output='false' {
+		cfharness.core.MockService::registerServiceHandler(argumentCollection=arguments);
+	}
+	
+	public void function discardServiceHandler (required string serviceUrl) output='false' {
+		cfharness.core.MockService::discardServiceHandler(argumentCollection=arguments);
+	}
+
+	public void function clearServiceHandlers () output='false' {
+		cfharness.core.MockService::clearServiceHandlers(argumentCollection=arguments);
+	}
+
 	public Request function getRequest () output='true' {
 		if (isNull(variables.requestInstance)) {
 			variables.requestInstance = createObject('component', 'cfharness.core.request');
@@ -63,5 +75,6 @@ component name='system' output='false' {
 	public void function reset () output='false' {
 		applicationStop();
 		location( url='run.cfm', addToken='false', statusCode='303' );
+		abort;
 	}
 }

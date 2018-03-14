@@ -5,7 +5,7 @@
 #   Base component for creating unit tests.
 
 */
-component name="baseTest" output=false accessors=true {
+component name="BaseTest" output=false accessors=true {
 
 	property string error;
 	property struct results;
@@ -30,7 +30,7 @@ component name="baseTest" output=false accessors=true {
 		variables.rc.setCurrentTest(this);
 
 		try {
-			variables.setup();
+			this.setup();
 		} catch (any Ex) {
 			//	Capture failures as failed tests.
 			assert(false, "An unexpected error was thrown in setup, #Ex.message#");
@@ -39,18 +39,18 @@ component name="baseTest" output=false accessors=true {
 
 		var testArray = [];
 
-		for (var name in THIS) {
+		for (var name in this) {
 			//	Store all test names.
 			if (arrayLen(REMatchNoCase('^test([a-z0-9_]+)', name))) {
-				if (IsCustomFunction(THIS[name]) OR isClosure(THIS[name])) {
+				if (IsCustomFunction(this[name]) OR isClosure(this[name])) {
 					testArray.append(name);
 				}
 			}
 		}
 		//	Sort the array using the custom 'order' function attribute.
 		arraySort(testArray, function (a, b){
-			var firstItem = GetMetaData(THIS[a]);
-			var secondItem = GetMetaData(THIS[b]);
+			var firstItem = GetMetaData(this[a]);
+			var secondItem = GetMetaData(this[b]);
 
 
 			StructAppend(firstItem, {'order' = 100}, false);
@@ -67,10 +67,9 @@ component name="baseTest" output=false accessors=true {
 
 		for (var fx in testArray) {
 			setCurrentTest(fx);
-			variables.proxy = this[fx];
-
+			this.proxy = this[fx];
 			try {
-				this[fx]();
+				this.proxy();
 			} catch (e) {
 				this.setError(e.message);
 				if (e.detail IS NOT ""){
@@ -81,7 +80,7 @@ component name="baseTest" output=false accessors=true {
 		}
 
 		try {
-			variables.tearDown();
+			this.tearDown();
 		} catch (any Ex) {
 			assert(false, "An unexpected error was thrown during tearDown, #Ex.message#");
 			return this;
@@ -90,18 +89,17 @@ component name="baseTest" output=false accessors=true {
 		return this;
 	}
 
-  public void function setup () output="false" {
-      /* Call any setup */
-      THIS.onSetup();
-      return;
-  }
+	public void function setup () output="false" {
+		/* Call any setup */
+		this.onSetup();
+		return;
+	}
 
-  public void function tearDown () output="false" {
-      /* Call any tearDowns */
-
-      THIS.onTearDown();
-      return;
-  }
+	public void function tearDown () output="false" {
+		/* Call any tearDowns */
+		this.onTearDown();
+		return;
+	}
 
 	private struct function createResult(required boolean result) output="false" {
 		var r = structnew();
@@ -158,11 +156,11 @@ component name="baseTest" output=false accessors=true {
 	}
 
 	public void function setCurrentTest(required string testMethod) output=false {
-		VARIABLES.currentTestMethod = ARGUMENTS.testMethod;
+		variables.currentTestMethod = arguments.testMethod;
 	}
 
 	public string function getCurrentTest() output=false {
-		return VARIABLES.currentTestMethod;
+		return variables.currentTestMethod;
 	}
 
 	/* Events for overriding */

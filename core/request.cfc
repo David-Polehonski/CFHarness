@@ -1,5 +1,7 @@
 component name='request' accessors='true' output='true' {
 
+	property name="endpoint" type="string";
+
 	public Request function init() output='false' {
 		cflock( name='cfharnessCoreRequestInit', timeout='5' ) {
 			variables.instance = request; // internal reference to request scope, managed by this object.
