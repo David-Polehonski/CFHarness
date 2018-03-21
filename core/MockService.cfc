@@ -60,7 +60,6 @@ component name='MockService' accessors=true {
 		//	Pick a Strategy, and delegate.
 		try {
 			//	Instantiate the Strategy component; and extract the available routes from the metadata
-
 			this.setStrategy( static.getServiceHandler(arguments.serviceUrl) );
 			if (isNull(this.getStrategy())) {
 				return this.respond(
@@ -89,7 +88,7 @@ component name='MockService' accessors=true {
 				for (r in routes) {
 					// Use a regex to convert the route into a regex for inserting values.
 					route = reReplace(r, variableDef, valueDef, 'all');
-					
+
 					if (reFindNoCase('^' & route & '\/?$' , arguments["serviceUrl"], 0, false) gt 0 and routes[r].keyExists(cgi.request_method) ) {
 						//	IF you find an applicable route.
 						var action = routes[r][cgi.request_method];
@@ -121,6 +120,9 @@ component name='MockService' accessors=true {
 						StructAppend(parameters, URL, true);
 
 						try {
+
+
+
 							return this.respond(argumentCollection=this.getStrategy()[action](argumentCollection=parameters));
 						} catch (any e) {
 							cfharness.core.Log::error( 'Exception in MockService; #e.message#' );

@@ -18,8 +18,6 @@ component name='request' accessors='true' output='true' {
 				variables.instance.context.testCount = 0;
 
 				variables.instance.context.previousTests = JavaCast('null', 0);
-				//variables.instance.context.previousTests.resize( 50 );
-
 				variables.instance.context.currentTest = new cfharness.BaseTest('Application Initialization');
 			}
 		}
