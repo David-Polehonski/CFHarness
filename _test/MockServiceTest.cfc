@@ -1,4 +1,4 @@
-component name="testMockService" extends="cfharness.baseTest" {
+component name="testMockService" extends="cfharness.core.BaseTest" {
 
 	this.testname="MockService";
 

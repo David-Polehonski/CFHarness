@@ -1,8 +1,4 @@
-/*@base-test.cfc
-    Copyright Ouse Creative Ltd 2015
-    Author David Polehonski <david@ousecreative.co.uk>
-
-#   Base component for creating unit tests.
+/*@BaseTest.cfc
 
 */
 component name="BaseTest" output=false accessors=true {
@@ -97,62 +93,24 @@ component name="BaseTest" output=false accessors=true {
 
 	public void function tearDown () output="false" {
 		/* Call any tearDowns */
+
+
 		this.onTearDown();
 		return;
 	}
 
-	private struct function createResult(required boolean result) output="false" {
-		var r = structnew();
-		var result = arguments.result;
-
-		r['isPassed'] = function () { return result; };
-		r['result'] = arguments.result? 'Passed' : 'Failed';
-
-		if (NOT arguments.result) {
-			r['reason'] = this.getError();
-		}
-
-		return r;
-	}
-
-	public boolean function assert (required any assertion, required string description) output="false" {
+	public Assertion function assert (required any assertion, required string description) output="false" {
 		if (!variables.tests.keyExists(getCurrentTest())){
 			variables.tests[getCurrentTest()] = [];
 			variables.results[getCurrentTest()] = structNew('linked');
 		}
 
+		var assertion = new cfharness.core.Assertion(this);
+
 		variables.tests[getCurrentTest()].append(description);
+		variables.results[getCurrentTest()][description]= assertion.assert(arguments.assertion, arguments.description).getResult();
 
-		this.beforeAssert(argumentCollection = arguments);
-
-		if (IsValid('boolean', arguments.assertion)){
-			if(NOT arguments.assertion AND this.getError() IS '') {
-				this.setError("Assertion returned false");
-			}
-
-			variables.results[getCurrentTest()][description] = createResult(arguments.assertion);
-
-			} else if (IsCustomFunction(ARGUMENTS.assertion) OR isClosure(ARGUMENTS.assertion)){
-
-			try {
-				proxy = arguments.assertion;
-				variables.results[getCurrentTest()][description] = createResult(proxy());
-				proxy = JavaCast('null', 0);
-			} catch (e) {
-				this.setError(e.message);
-
-				if(e.detail IS NOT '') {
-					this.setError(e.detail);
-				}
-
-				variables.results[getCurrentTest()][description] = createResult(false);
-			}
-		}
-
-		this.afterAssert(argumentCollection = variables.results[getCurrentTest()][description]);
-		this.setError('');
-
-		return variables.results[getCurrentTest()][description].isPassed();
+		return assertion;
 	}
 
 	public void function setCurrentTest(required string testMethod) output=false {

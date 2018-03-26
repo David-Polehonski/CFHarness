@@ -18,7 +18,7 @@ component name='request' accessors='true' output='true' {
 				variables.instance.context.testCount = 0;
 
 				variables.instance.context.previousTests = JavaCast('null', 0);
-				variables.instance.context.currentTest = new cfharness.BaseTest('Application Initialization');
+				variables.instance.context.currentTest = new cfharness.core.BaseTest('Application Initialization');
 			}
 		}
 		return this;
@@ -56,7 +56,6 @@ component name='request' accessors='true' output='true' {
 		var tests = arguments.testObject.getTests();
 		var results = arguments.testObject.getResults();
 
-
 		if (tests.count() GT 0) {
 
 			var resultSet = structNew('linked');
@@ -68,15 +67,14 @@ component name='request' accessors='true' output='true' {
 
 				var n = 1;
 				for(var testName in tests[setName]){
-					resultSet[setName][n++] = new cfharness.TestResult(testName, results[setName][testName]);
+					resultSet[setName][n++] = results[setName][testName];
 
-					switch (resultSet[setName][n-1].getResult()) {
-					case "Passed":
+					if (results[setName][testName].hasPassed()) {
 						variables.instance.passed += 1;
-						break;
-					case "Failed":
+					}
+
+					if (results[setName][testName].hasFailed()) {
 						variables.instance.failed += 1;
-						break;
 					}
 
 				}

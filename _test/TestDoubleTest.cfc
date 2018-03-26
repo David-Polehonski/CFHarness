@@ -1,4 +1,4 @@
-component name="testDoubleTest" extends="cfharness.baseTest" {
+component name="testDoubleTest" extends="cfharness.core.BaseTest" {
 
 	this.testname="TestDouble";
 

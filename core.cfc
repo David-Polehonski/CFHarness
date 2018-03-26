@@ -29,7 +29,7 @@
 		public void function onTestApplicationStart () output='false' { }
 		public boolean function onApplicationStart () output='false' {
 			try {
-
+		
 				application['cfharnessLog'] = "TestSuite";
 				application['cfharness'] = {};
 				application['cfharness']['requestCount'] = 1; // How many requests in a particular application life cycle.
@@ -61,8 +61,8 @@
 
 	<cffunction name="OnRequestStart" access="public" returntype="boolean" output="true" hint="Fires at first part of page processing.">
 		<cfargument name="TargetPage" type="string" required="true"/>
-
 		<cfif !application.keyExists('cfharness') >
+			<cfset applicationStop() />
 			<cfabort />
 		</cfif>
 
