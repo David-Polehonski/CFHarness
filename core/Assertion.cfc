@@ -13,7 +13,7 @@ component name="Assertion" extends='aCondition' {
 		variables.expression = arguments.assertionExpression;
 
 		variables.assertionType =
-			IsCustomFunction( variables.expression )?
+			(IsCustomFunction( variables.expression ) || isClosure( variables.expression ))?
 				'f' : isValid('boolean', variables.expression)?
 				'b' : IsSimpleValue(variables.expression)?
 				'v' : IsValid('component', variables.expression)?

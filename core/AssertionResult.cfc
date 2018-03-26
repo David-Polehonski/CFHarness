@@ -1,7 +1,7 @@
 component name="AssertionResult" {
 
 	public AssertionResult function init (required struct result) output="false" {
-		variables.result = arguments.result;
+		variables.result = arguments.result; // This is a reference to the internal data of the parent Assertion.
 		return this;
 	}
 
