@@ -1,0 +1,21 @@
+{
+    "app":{
+        "cfengine":"lucee@5"
+    },
+    "JVM":{
+        "heapSize":"1024"
+    },
+    "web":{
+        "webroot":"../",
+        "http":{
+            "port":"8181"
+        },
+        "SSL":{
+            "port":"8282",
+            "enable":"true",
+            "certFile":"../_assets/localhost.crt",
+            "keyFile":"../_assets/localhost.key"
+        }
+    },
+    "openBrowserUrl":"_test/run.cfm"
+}

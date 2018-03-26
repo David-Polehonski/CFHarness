@@ -13,7 +13,7 @@
 						Results #(testName != '')? 'for ' & testName & ' test' : ''#:
 					</h1>
 					<ul>
-						<cfloop collection="#REQUEST.results[testName]#" index="setName" item="testSet">
+						<cfloop collection="#REQUEST.results[testName]#" index="setName" item="description">
 							<li>
 								<cfif structKeyExists(REQUEST.tests[testName], setName) >
 									<cfset d = GetMetaData(REQUEST.tests[testName][setName]) />
@@ -26,16 +26,17 @@
 									#setName#
 								</cfif>
 								<ul>
-									<cfloop array="#testSet#" item="i">
+									<cfloop array="#description#" item="i">
+										<cfset result = i.hasPassed()? 'Passed' : 'Failed'/>
 										<li>
-											<span class="test-result__test">#i.getTest()# :</span><!--
-									>--><span class="test-result__result test-result__result--#i.getResult()#">
-												#i.getResult()#
-												<cfif i.getResult() IS "Failed">
-													<cfif isJson(i.getReason())>
-														#WriteDump(var=deserializeJson(i.getReason()), label='Reason')#
-													<cfelseif isValid('string', i.getReason()) >
-														: #i.getReason()#
+											<span class="test-result__test">#i.getDescription()# :</span><!--
+									>--><span class="test-result__result test-result__result--#result#">
+												#result#
+												<cfif i.hasFailed() >
+													<cfif isJson(i.getReasonForFailure()) >
+														#WriteDump(var=deserializeJson(i.getReasonForFailure()), label='Reason for failure')#
+													<cfelseif isValid('string', i.getReasonForFailure()) >
+														: #i.getReasonForFailure()#
 													</cfif>
 												</cfif>
 											</span>
