@@ -96,6 +96,36 @@ component name="Assertion" extends='aCondition' {
 		variables.tc.afterAssert(this);
 	}
 
+	public void function isNull() output='false' {
+		//	For function expressions:
+		variables.tc.beforeAssert(this);
+
+		if (isNull(variables.expression)) {
+			variables._.result = true;
+			variables._.reasonForFailure = "";
+		} else {
+			variables._.result = false;
+			variables._.reasonForFailure = 'Expression does not evaluate to null';
+		}
+
+		variables.tc.afterAssert(this);
+	}
+
+	public void function isNotNull() output='false' {
+		//	For function expressions:
+		variables.tc.beforeAssert(this);
+
+		if (!isNull(variables.expression)) {
+			variables._.result = true;
+			variables._.reasonForFailure = "";
+		} else {
+			variables._.result = false;
+			variables._.reasonForFailure = 'Expression evaluates to null';
+		}
+
+		variables.tc.afterAssert(this);
+	}
+
 	// public void function throws(required string exceptionType) output='false' {
 	// 	//	For function expressions:
 	// 	variables.tc.beforeAssert(this);
