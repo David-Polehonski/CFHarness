@@ -90,7 +90,7 @@ component name="Assertion" extends='aCondition' {
 			variables._.reasonForFailure = "";
 		} else {
 			variables._.result = false;
-			variables._.reasonForFailure = 'Expression or value did not pass equality test';
+			variables._.reasonForFailure = 'Expression or value did not pass equality test [#variables.expression# = #arguments.value#]';
 		}
 
 		variables.tc.afterAssert(this);
