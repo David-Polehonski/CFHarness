@@ -90,7 +90,22 @@ component name="Assertion" extends='aCondition' {
 			variables._.reasonForFailure = "";
 		} else {
 			variables._.result = false;
-			variables._.reasonForFailure = 'Expression or value did not pass equality test [#variables.expression# = #arguments.value#]';
+			variables._.reasonForFailure = 'Expression or value [#variables.expression#] did not pass equality test';
+		}
+
+		variables.tc.afterAssert(this);
+	}
+
+	public void function matches(required string regex) output='false' {
+		//	For function expressions:
+		variables.tc.beforeAssert(this);
+
+		if (REFindNoCase(arguments.regex, variables.expression) != 0) {
+			variables._.result = true;
+			variables._.reasonForFailure = "";
+		} else {
+			variables._.result = false;
+			variables._.reasonForFailure = 'Expression or value [#variables.expression#] did not pass equality test';
 		}
 
 		variables.tc.afterAssert(this);

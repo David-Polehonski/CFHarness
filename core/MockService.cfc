@@ -190,6 +190,16 @@ component name='MockService' accessors=true {
 					}
 				}
 				break;
+			case '400':
+				responseStruct = {
+					'response': arguments.contentBody,
+					'responseType': arguments.contentType,
+					'status': {
+						'code': 400,
+						'text': 'BAD REQUEST'
+					}
+				}
+				break;
 			case '401':
 				responseStruct = {
 					'response': arguments.contentBody,
@@ -227,11 +237,12 @@ component name='MockService' accessors=true {
 	}
 
 	private void function record (required struct call) output="false" {
+		cfharness.core.Log::log( "#structCount(static.observers)#" );
 		for( var observerId in static.observers ) {
 			var observer = static.observers[observerId];
+			cfharness.core.Log::log( "#observer.url# == #call.serviceUrl#; #reFindNoCase(observer.url, call.serviceUrl, 0, false)# " )
 			if ( observer.url == call.serviceUrl or reFindNoCase(observer.url, call.serviceUrl, 0, false) > 0) {
 				observer.calls.append( call );
-				return;
 			}
 		}
 	}
