@@ -8,6 +8,10 @@ component name="Assertion" extends='aCondition' {
 		return this;
 	}
 
+	public any function getEvaluation() output="false" {
+		return duplicate( variables.expression );
+	}
+
 	public Assertion function assert (required any assertionExpression, required string assertionDescription ) output="false" {
 		variables.description = arguments.assertionDescription;
 		variables.expression = arguments.assertionExpression;
@@ -44,7 +48,7 @@ component name="Assertion" extends='aCondition' {
 		return result;
 	}
 
-	public void function returnsTrue() output='false' {
+	public Assertion function returnsTrue() output='false' {
 		//	For function expressions:
 		try {
 			variables.tc.beforeAssert(this);
@@ -64,9 +68,10 @@ component name="Assertion" extends='aCondition' {
 			variables._.reasonForFailure = serializeJson( {e.type: e.message, 'detail': e.detail} );
 		}
 		variables.tc.afterAssert(this);
+		return this;
 	}
 
-	public void function equalsTrue() output='false' {
+	public Assertion function equalsTrue() output='false' {
 		//	For function expressions:
 		variables.tc.beforeAssert(this);
 
@@ -79,9 +84,10 @@ component name="Assertion" extends='aCondition' {
 		}
 
 		variables.tc.afterAssert(this);
+		return this;
 	}
 
-	public void function equals(required any value) output='false' {
+	public Assertion function equals(required any value) output='false' {
 		//	For function expressions:
 		variables.tc.beforeAssert(this);
 
@@ -94,9 +100,10 @@ component name="Assertion" extends='aCondition' {
 		}
 
 		variables.tc.afterAssert(this);
+		return this;
 	}
 
-	public void function matches(required string regex) output='false' {
+	public Assertion function matches(required string regex) output='false' {
 		//	For function expressions:
 		variables.tc.beforeAssert(this);
 
@@ -109,9 +116,10 @@ component name="Assertion" extends='aCondition' {
 		}
 
 		variables.tc.afterAssert(this);
+		return this;
 	}
 
-	public void function isNull() output='false' {
+	public Assertion function isNull() output='false' {
 		//	For function expressions:
 		variables.tc.beforeAssert(this);
 
@@ -124,9 +132,10 @@ component name="Assertion" extends='aCondition' {
 		}
 
 		variables.tc.afterAssert(this);
+		return this;
 	}
 
-	public void function isNotNull() output='false' {
+	public Assertion function isNotNull() output='false' {
 		//	For function expressions:
 		variables.tc.beforeAssert(this);
 
@@ -139,6 +148,7 @@ component name="Assertion" extends='aCondition' {
 		}
 
 		variables.tc.afterAssert(this);
+		return this;
 	}
 
 	// public void function throws(required string exceptionType) output='false' {
