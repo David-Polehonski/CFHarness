@@ -49,7 +49,7 @@ component name='DoubleFactory' {
 			var thisScope = proxyScope;
 			return function () {
 				if (thisScope.keyExists(thisFunction.name)) {
-					return thisScope[thisFunction.name];
+					return (isCustomFunction(thisScope[thisFunction.name]) || isClosure(thisScope[thisFunction.name])) ? thisScope[thisFunction.name](argumentCollection=arguments): thisScope[thisFunction.name];
 				}
 				return JavaCast('null', 0);
 			};
@@ -80,7 +80,10 @@ component name='DoubleFactory' {
 			return function () {
 				thisScope[thisFunctionName]['called'] = true;
 				thisScope[thisFunctionName]['calls'].append( arguments );
-				return thisScope[thisFunctionName].keyExists('returns')? thisScope[thisFunctionName]['returns'] : javacast('null', 0);
+				if (thisScope[thisFunctionName].keyExists('returns')) {
+					return (isCustomFunction(thisScope[thisFunctionName]['returns']) || isClosure(thisScope[thisFunctionName]['returns'])) ? thisScope[thisFunctionName]['returns'](argumentCollection=arguments): thisScope[thisFunctionName]['returns'];
+				}
+				return JavaCast('null', 0);
 			};
 		};
 

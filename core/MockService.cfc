@@ -7,6 +7,7 @@ component name='MockService' accessors=true {
 			this.services = {};
 			this.observers = {};
 		}
+		
 		return application.cfharness.mockService;
 	}
 

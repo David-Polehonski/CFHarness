@@ -103,6 +103,23 @@ component name="Assertion" extends='aCondition' {
 		return this;
 	}
 
+	public Assertion function isGreaterThan(required any value) output='false' {
+		//	For function expressions:
+		variables.tc.beforeAssert(this);
+
+		if (variables.expression gt arguments.value) {
+			variables._.result = true;
+			variables._.reasonForFailure = "";
+		} else {
+			variables._.result = false;
+			variables._.reasonForFailure = 'Expression or value [#variables.expression#] is less than [#arguments.value#]';
+		}
+
+		variables.tc.afterAssert(this);
+		return this;
+	}
+
+
 	public Assertion function matches(required string regex) output='false' {
 		//	For function expressions:
 		variables.tc.beforeAssert(this);
