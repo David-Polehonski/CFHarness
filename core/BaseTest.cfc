@@ -108,7 +108,7 @@ component name="BaseTest" output=false accessors=true {
 		var assertion = new cfharness.core.Assertion(this);
 
 		variables.tests[getCurrentTest()].append(description);
-		variables.results[getCurrentTest()][description]= assertion.assert(arguments.assertion, arguments.description).getResult();
+		variables.results[getCurrentTest()][description]= assertion.assert(arguments.assertion, arguments.description).getResult(); // Returns a reference to the result data, so if we modify the assertion the new result is used.
 
 		return assertion;
 	}
