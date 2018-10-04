@@ -1,3 +1,21 @@
+/**
+ - Dummy
+ - - objects are passed around but never actually used. Usually they are just used to fill parameter lists.
+ 
+ - Fake
+ - - objects actually have working implementations, but usually take some shortcut which makes them not suitable for production.
+ 
+ - Stubs 
+ - - provide canned answers to calls made during the test, usually not responding at all to anything outside what's programmed in for the test.
+ 
+ - Spies
+ - - are stubs that also record some information based on how they were called. One form of this might be an email service that records how \
+     many messages it was sent.
+ 
+ - Mocks
+ - - are pre-programmed with expectations which form a specification of the calls they are expected to receive. They can throw an exception if \
+     they receive a call they don't expect and are checked during verification to ensure they got all the calls they were expecting.
+**/
 component name='DoubleFactory' {
 	static {
 		components = createObject('Java','java.util.HashMap');
@@ -56,17 +74,28 @@ component name='DoubleFactory' {
 		var metadata = getMetaData(newSpy);
 
 		var proxyScope = {};
-		var spyMethodCall = function (required struct methodDefinition) {
-			var thisFunction = duplicate(arguments.methodDefinition);
+		var spyMethodCall = function (required string methodName) {
+			var thisFunctionName = arguments.methodName;
 			var thisScope = proxyScope;
 			return function () {
-				thisScope[thisFunction.name]['called'] = true;
-				thisScope[thisFunction.name]['calls'].append( arguments );
-				return JavaCast('null', 0);
+				thisScope[thisFunctionName]['called'] = true;
+				thisScope[thisFunctionName]['calls'].append( arguments );
+				return thisScope[thisFunctionName].keyExists('returns')? thisScope[thisFunctionName]['returns'] : javacast('null', 0);
 			};
 		};
 
+		newSpy.returnOnCall = function (required string method, required any return) {
+			if (!proxyScope.keyExists(arguments.method)){
+				proxyScope[method] = { 'called': false, 'calls': [], 'returns': javacast('null', 0) };
+			}
+			proxyScope[method]['returns'] = arguments.return;
+			newSpy[method] = spyMethodCall(method);
+
+			return newSpy;
+		};
+
 		newSpy.wasCalled = function(required string methodName) {
+			writeDump(proxyScope);	
 			if (proxyScope.keyExists(methodName)){
 				return proxyScope[methodName]['called'];
 			}
@@ -94,8 +123,8 @@ component name='DoubleFactory' {
 		if(!isNull(metadata.functions)) {
 			for (var fx in metadata.functions) {
 				// Stub all the functions
-				proxyScope[fx.name] = { 'called': false, 'calls': [] };
-				newSpy[fx.name] = spyMethodCall(fx);
+				proxyScope[fx.name] = { 'called': false, 'calls': [], 'returns': javacast('null', 0) };
+				newSpy[fx.name] = spyMethodCall(fx.name);
 			}
 		}
 
@@ -185,8 +214,8 @@ component name='DoubleFactory' {
 	}
 
 	private static string function generateBlankComponent () {
-		var componentTemplate = "component name='BlankDouble' { public component function init () { return this; } }";
-		var componentPath = static.generateComponent('BlankDouble', componentTemplate);
+		var componentTemplate = "component name='GenericTestDouble' { public component function init () { return this; } }";
+		var componentPath = static.generateComponent('GenericTestDouble', componentTemplate);
 
 		return componentPath;
 	}

@@ -120,11 +120,16 @@
 		<cflog file="#application['cfharnessLog']#" application="yes" text="Starting 'OnRequest'" />
 		<cfif variables.rc.getEndpoint() is "MockService" >
 			<!---Its a proxy test, attempt resolve the call --->
-			<cfset cfharness.core.Log::log("MockService API endpoint") />
-			<cfset mockService = new cfharness.core.MockService() />
-			<cfset var response = mockService.request( cgi.path_info ) />
-			<cfset response.stream() />
-			<cfreturn />
+			<cftry>
+				<cfset cfharness.core.Log::log("MockService API endpoint") />
+				<cfset mockService = new cfharness.core.MockService() />
+				<cfset var response = mockService.request( cgi.path_info ) />
+				<cfset response.stream() />
+				<cfreturn />
+				<cfcatch>
+					<cfdump var="#cfcatch#" abort="true" />
+				</cfcatch>
+			</cftry>
 		</cfif>
 
 		<cfif NOT structKeyExists(REQUEST, "response")>

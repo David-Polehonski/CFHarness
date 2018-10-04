@@ -8,6 +8,10 @@ component name="Assertion" extends='aCondition' {
 		return this;
 	}
 
+	public any function getEvaluation() output="false" {
+		return duplicate( variables.expression );
+	}
+
 	public Assertion function assert (required any assertionExpression, required string assertionDescription ) output="false" {
 		variables.description = arguments.assertionDescription;
 		variables.expression = arguments.assertionExpression;
@@ -44,7 +48,7 @@ component name="Assertion" extends='aCondition' {
 		return result;
 	}
 
-	public void function returnsTrue() output='false' {
+	public Assertion function returnsTrue() output='false' {
 		//	For function expressions:
 		try {
 			variables.tc.beforeAssert(this);
@@ -64,9 +68,10 @@ component name="Assertion" extends='aCondition' {
 			variables._.reasonForFailure = serializeJson( {e.type: e.message, 'detail': e.detail} );
 		}
 		variables.tc.afterAssert(this);
+		return this;
 	}
 
-	public void function equalsTrue() output='false' {
+	public Assertion function equalsTrue() output='false' {
 		//	For function expressions:
 		variables.tc.beforeAssert(this);
 
@@ -79,9 +84,10 @@ component name="Assertion" extends='aCondition' {
 		}
 
 		variables.tc.afterAssert(this);
+		return this;
 	}
 
-	public void function equals(required any value) output='false' {
+	public Assertion function equals(required any value) output='false' {
 		//	For function expressions:
 		variables.tc.beforeAssert(this);
 
@@ -90,10 +96,59 @@ component name="Assertion" extends='aCondition' {
 			variables._.reasonForFailure = "";
 		} else {
 			variables._.result = false;
-			variables._.reasonForFailure = 'Expression or value did not pass equality test';
+			variables._.reasonForFailure = 'Expression or value [#variables.expression#] did not pass equality test';
 		}
 
 		variables.tc.afterAssert(this);
+		return this;
+	}
+
+	public Assertion function matches(required string regex) output='false' {
+		//	For function expressions:
+		variables.tc.beforeAssert(this);
+
+		if (REFindNoCase(arguments.regex, variables.expression) != 0) {
+			variables._.result = true;
+			variables._.reasonForFailure = "";
+		} else {
+			variables._.result = false;
+			variables._.reasonForFailure = 'Expression or value [#variables.expression#] did not pass equality test';
+		}
+
+		variables.tc.afterAssert(this);
+		return this;
+	}
+
+	public Assertion function isNull() output='false' {
+		//	For function expressions:
+		variables.tc.beforeAssert(this);
+
+		if (isNull(variables.expression)) {
+			variables._.result = true;
+			variables._.reasonForFailure = "";
+		} else {
+			variables._.result = false;
+			variables._.reasonForFailure = 'Expression does not evaluate to null';
+		}
+
+		variables.tc.afterAssert(this);
+		return this;
+	}
+
+	public Assertion function isNotNull() output='false' {
+		//	For function expressions:
+		variables.tc.beforeAssert(this);
+
+		if (!isNull(variables.expression)) {
+			variables._.result = true;
+			variables._.reasonForFailure = "";
+		} else {
+			variables._.result = false;
+			variables._.reasonForFailure = 'Expression evaluates to null';
+		}
+
+		variables.tc.afterAssert(this);
+		return this;
 	}
 
 	// public void function throws(required string exceptionType) output='false' {

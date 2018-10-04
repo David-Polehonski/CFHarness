@@ -52,10 +52,19 @@ component name='system' output='false' {
 		}
 	}
 
+	public Observer function observe ( required string serviceUrl ) output='false' {
+		var newObserver = new cfharness.core.Observer( cfharness.core.MockService::observe(arguments.serviceUrl) );
+		return newObserver;
+	}
+
+	public void function clearObservers () output='false' {
+		cfharness.core.MockService::clearObservers();
+	}
+
 	public void function registerServiceHandler (required string serviceUrl, required string componentPath) output='false' {
 		cfharness.core.MockService::registerServiceHandler(argumentCollection=arguments);
 	}
-	
+
 	public void function discardServiceHandler (required string serviceUrl) output='false' {
 		cfharness.core.MockService::discardServiceHandler(argumentCollection=arguments);
 	}

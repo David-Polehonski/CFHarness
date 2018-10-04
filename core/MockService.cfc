@@ -1,13 +1,11 @@
 component name='MockService' accessors=true {
 
-	static {
-		services = {};
-		observers = {};
-	}
-
 	public MockService function init () output='false' {
 		if (isNull(application.cfharness.mockService)) {
 			application.cfharness.mockService = this;
+
+			this.services = {};
+			this.observers = {};
 		}
 		return application.cfharness.mockService;
 	}
@@ -15,8 +13,9 @@ component name='MockService' accessors=true {
 	public static void function registerServiceHandler (required string serviceUrl, required string componentPath) output='false' {
 		if (fileExists(expandpath('/testroot/' & LCase( replace(arguments.componentPath, '.', '/', 'all') ) & '.cfc'))) {
 			try {
+				var instance = new MockService();
 				cfharness.core.Log::log("Adding #arguments.componentPath# for #arguments.serviceUrl#");
-				static.services[arguments.serviceUrl] = createObject('component', 'testroot.#arguments.componentPath#');
+				instance.services[arguments.serviceUrl] = createObject('component', 'testroot.#arguments.componentPath#');
 			} catch (any e) {
 				cfharness.core.Log::warn("Failed to Instantiate #arguments.componentPath# for #arguments.serviceUrl#: #e.message#");
 			}
@@ -26,23 +25,25 @@ component name='MockService' accessors=true {
 	}
 
 	public static void function discardServiceHandler (required string serviceUrl) output='false' {
-		if (StructKeyExists(static.services, arguments.serviceUrl)) {
+		var instance = new MockService();
+		if (StructKeyExists(instance.services, arguments.serviceUrl)) {
 			cfharness.core.Log::log("Discarding handler for #arguments.serviceUrl#");
-			StructDelete(static.services, serviceUrl);
+			StructDelete(instance.services, serviceUrl);
 		}
 	}
 
 	public static any function getServiceHandler (required string serviceUrl) output='false' {
 		cfharness.core.Log::log("Attempting to resolve handler for #arguments.serviceUrl#");
-		if (StructKeyExists(static.services, arguments.serviceUrl)) {
-			return duplicate( static.services[arguments.serviceUrl] );
+		var instance = new MockService();
+		if (StructKeyExists(instance.services, arguments.serviceUrl)) {
+			return duplicate( instance.services[arguments.serviceUrl] );
 		}
 
-		var registeredUrls = static.services.keyArray();
+		var registeredUrls = instance.services.keyArray();
 
 		for (var urlExpression in registeredUrls) {
 			if (reFindNoCase(urlExpression, arguments.serviceUrl, 0, false) > 0) {
-				return duplicate( static.services[urlExpression] );
+				return duplicate( instance.services[urlExpression] );
 			}
 		}
 		cfharness.core.Log::warn("Failed to Find Service handler for #arguments.serviceUrl#");
@@ -50,21 +51,23 @@ component name='MockService' accessors=true {
 
 	public static void function clearServiceHandlers () output='false' {
 		cfharness.core.Log::log("Clearing all service handlers");
-		static.services.clear();
+		var instance = new MockService();
+		instance.services.clear();
 	}
 
 	public static string function observe (required string serviceUrl) output='false' {
 		cfharness.core.Log::log("Begin Observing '#arguments.serviceUrl#' at #dateTimeFormat(now(), 'yyyy-mm-ddTHH:nn:ss:L')#");
-
+		var instance = new MockService();
 		var observerId = hash( arguments.serviceUrl & dateTimeFormat(now(), 'yyyy-mm-ddTHH:nn:ss:L') & RandRange(0, 255), 'MD5');
-		static.observers[ observerId ] = { 'url': arguments.serviceUrl, 'calls': [] };
+		instance.observers[ observerId ] = { 'url': arguments.serviceUrl, 'calls': [] };
 		return observerId;
 	}
 
 	public static array function retrieveCalls (required string observerId) output='false' {
 		cfharness.core.Log::log("Retrieving calls for '#arguments.observerId#'");
-		if (static.observers.keyExists(arguments.observerId)) {
-			return duplicate( static.observers[arguments.observerId]['calls'] );
+		var instance = new MockService();
+		if (instance.observers.keyExists(arguments.observerId)) {
+			return duplicate( instance.observers[arguments.observerId]['calls'] );
 		} else {
 			throw(type='InvalidObserverId', message="The ObserverId '#arguments.observerId#' is not valid");
 		}
@@ -72,18 +75,27 @@ component name='MockService' accessors=true {
 
 	public static void function disregard (required string observerId) output='false' {
 		cfharness.core.Log::log("Disregard calls for '#arguments.observerId#'");
-		if (static.observers.keyExists(arguments.observerId)) {
-			structDelete(static.observers, arguments.observerId);
+		var instance = new MockService();
+		if (instance.observers.keyExists(arguments.observerId)) {
+			structDelete(instance.observers, arguments.observerId);
 		}
 	}
 
 	public static void function clearObservers () output='false' {
 		cfharness.core.Log::log("Clearing all observers");
-		static.observers.clear();
+		var instance = new MockService();
+		instance.observers.clear();
 	}
 
 	//remote struct function {functionName} (required string param) method='httpMethod' route='/path/{@param}' output=false returnFormat='plain'
-	public Response function request (required string serviceUrl) output=false returnFormat='plain' {
+	public Response function request (
+		required string serviceUrl,
+		required string requestMethod=cgi.request_method,
+		required string requestUrl=cgi.request_uri,
+		required struct requestHeaders=static.getRequestHeaders(),
+		required string requestBody=static.getRequestBody(),
+		) output=false returnFormat='plain' {
+		
 		var methodArgs = {};
 		//	Pick a Strategy, and delegate.
 		try {
@@ -91,16 +103,16 @@ component name='MockService' accessors=true {
 			request.strategy = static.getServiceHandler(arguments.serviceUrl);
 			request.call = {
 				'serviceUrl': arguments.serviceUrl,
-				'method': cgi.request_method,
-				'url': cgi.request_url,
+				'method': arguments.requestMethod,
+				'url': arguments.requestUrl,
 				'querystring': structReduce(url, (a,k,v)=>{ return (len(a) === 0 ? '?' : (a & '&')) & URLEncodedFormat(k) & '=' & URLEncodedFormat(v) }, ''),
-				'headers': static.getRequestHeaders(),
-				'body': static.getRequestBody()
+				'headers': arguments.requestHeaders,
+				'body': arguments.requestBody
 			};
 
 			if (isNull(request.strategy)) {
 				return this.respond(
-					contentBody="Available Services: #arrayToList(static.services.keyArray())#",
+					contentBody="Available Services: #arrayToList(this.services.keyArray())#",
 					contentType='text/plain',
 					status='404'
 				);
@@ -125,9 +137,9 @@ component name='MockService' accessors=true {
 				for (r in routes) {
 					// Use a regex to convert the route into a regex for inserting values.
 					route = reReplace(r, variableDef, valueDef, 'all');
-					if (reFindNoCase('^' & route & '\/?$' , arguments["serviceUrl"], 0, false) gt 0 and routes[r].keyExists(cgi.request_method) ) {
+					if (reFindNoCase('^' & route & '\/?$' , arguments["serviceUrl"], 0, false) gt 0 and routes[r].keyExists(arguments.requestMethod) ) {
 						//	IF you find an applicable route.
-						var action = routes[r][cgi.request_method];
+						var action = routes[r][arguments.requestMethod];
 						var args = {'names': reMatchNoCase(variableDef, r), 'values': []};
 
 
@@ -147,9 +159,9 @@ component name='MockService' accessors=true {
 							return result;
 							}, StructNew());
 
-						parameters.headers = static.getRequestHeaders();
-						if (listFind('PUT|POST', cgi.request_method, '|') gt 0) {
-							parameters.body = static.getRequestBody();
+						parameters.headers = arguments.requestHeaders;
+						if (listFind('PUT|POST', arguments.requestMethod, '|') gt 0) {
+							parameters.body = arguments.requestBody;
 						}
 
 						StructAppend(parameters, FORM, true);
@@ -172,6 +184,7 @@ component name='MockService' accessors=true {
 			}
 		} catch (any e) {
 			cfheader(name='content-type', value='text/html');
+			cfharness.core.Log::log('Failed::#e.message#');
 			return respond(status='500');
 		}
 		return respond(status='404');
@@ -187,6 +200,16 @@ component name='MockService' accessors=true {
 					'status': {
 						'code': 200,
 						'text': 'OK'
+					}
+				}
+				break;
+			case '400':
+				responseStruct = {
+					'response': arguments.contentBody,
+					'responseType': arguments.contentType,
+					'status': {
+						'code': 400,
+						'text': 'BAD REQUEST'
 					}
 				}
 				break;
@@ -227,11 +250,12 @@ component name='MockService' accessors=true {
 	}
 
 	private void function record (required struct call) output="false" {
-		for( var observerId in static.observers ) {
-			var observer = static.observers[observerId];
+		
+		for( var observerId in this.observers ) {
+			var observer = this.observers[observerId];
+			cfharness.core.Log::log( "#observer.url# == #call.serviceUrl#; #reFindNoCase(observer.url, call.serviceUrl, 0, false)# " )
 			if ( observer.url == call.serviceUrl or reFindNoCase(observer.url, call.serviceUrl, 0, false) > 0) {
 				observer.calls.append( call );
-				return;
 			}
 		}
 	}
