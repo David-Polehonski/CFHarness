@@ -7,6 +7,7 @@ component name='MockService' accessors=true {
 			this.services = {};
 			this.observers = {};
 		}
+		
 		return application.cfharness.mockService;
 	}
 
@@ -101,7 +102,7 @@ component name='MockService' accessors=true {
 		try {
 			//	Instantiate the Strategy component; and extract the available routes from the metadata
 			request.strategy = static.getServiceHandler(arguments.serviceUrl);
-			request.call = {
+			var requestCall = {
 				'serviceUrl': arguments.serviceUrl,
 				'method': arguments.requestMethod,
 				'url': arguments.requestUrl,
@@ -112,6 +113,7 @@ component name='MockService' accessors=true {
 
 			if (isNull(request.strategy)) {
 				return this.respond(
+					call=requestCall,
 					contentBody="Available Services: #arrayToList(this.services.keyArray())#",
 					contentType='text/plain',
 					status='404'
@@ -167,13 +169,16 @@ component name='MockService' accessors=true {
 						StructAppend(parameters, FORM, true);
 						StructAppend(parameters, URL, true);
 
-						request.call.parameters = parameters;
+						requestCall.parameters = parameters;
 
 						try {
-							return this.respond(argumentCollection=request.strategy[action](argumentCollection=parameters));
+							var responseStruct = request.strategy[action](argumentCollection=parameters);
+							responseStruct.call = requestCall;
+							return this.respond(argumentCollection=responseStruct);
 						} catch (any e) {
 							cfharness.core.Log::error( 'Exception in MockService; #e.message#' );
 							return this.respond(
+								call=requestCall,
 								contentBody=e.message,
 								contentType='text/plain',
 								status='500'
@@ -185,12 +190,12 @@ component name='MockService' accessors=true {
 		} catch (any e) {
 			cfheader(name='content-type', value='text/html');
 			cfharness.core.Log::log('Failed::#e.message#');
-			return respond(status='500');
+			return respond( argumentCollection = {'call': requestCall, contentBody='', contentType='text/plain', status: '500'} );
 		}
-		return respond(status='404');
+		return respond( argumentCollection = {'call': requestCall, contentBody='', contentType='text/plain', status: '404'} );
 	}
 
-	public component function respond (required string contentBody = '', required string contentType = 'text/plain', required string status='200') output=false {
+	public component function respond (required struct call, required string contentBody = '', required string contentType = 'text/plain', required string status='200') output=false {
 		var responseStruct = {};
 		switch(arguments.status) {
 			case '200':
@@ -244,8 +249,8 @@ component name='MockService' accessors=true {
 				}
 				break;
 		}
-		request.call.responseData = responseStruct;
-		this.record( request.call );
+		arguments.call.responseData = responseStruct;
+		this.record( arguments.call );
 		return new cfharness.core.Response( responseStruct );
 	}
 
@@ -253,7 +258,7 @@ component name='MockService' accessors=true {
 		
 		for( var observerId in this.observers ) {
 			var observer = this.observers[observerId];
-			cfharness.core.Log::log( "#observer.url# == #call.serviceUrl#; #reFindNoCase(observer.url, call.serviceUrl, 0, false)# " )
+			cfharness.core.Log::log( "Record? #observer.url# == #call.serviceUrl#; #reFindNoCase(observer.url, call.serviceUrl, 0, false) != 0# " )
 			if ( observer.url == call.serviceUrl or reFindNoCase(observer.url, call.serviceUrl, 0, false) > 0) {
 				observer.calls.append( call );
 			}

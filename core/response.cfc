@@ -1,6 +1,14 @@
 //  response.cfc, convers/gathers response details and then send the response via it's stream method
 component name='response' output='false' {
 
+	public string function getResponse() {
+		return this.responseScope.response;
+	}
+
+	public string function getStatusCode() {
+		return this.responseScope.status.code;
+	}
+
 	public Response function init (required struct responseScope) output='false' {
 		this.responseScope = arguments.responseScope;
 		if (isNull(this.responseScope.response)) {
