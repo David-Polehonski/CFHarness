@@ -39,17 +39,17 @@ component name='DoubleFactory' {
 		return newDummy;
 	}
 
-	public static component function generateStub (required string componentPath = '') output="false" {
+	public static component function generateStub (required string componentPath = '') output="true" {
 		var newStub = static.loadComponentPath(argumentCollection=arguments);
 		var metadata = getMetaData(newStub);
 
 		var proxyScope = {};
-		var stubMethodCall = function (required struct methodDefinition) {
-			var thisFunction = duplicate(arguments.methodDefinition);
+		var stubMethodCall = function (required string methodName) {
+			var thisFunction = arguments.methodName;
 			var thisScope = proxyScope;
 			return function () {
-				if (thisScope.keyExists(thisFunction.name)) {
-					return (isCustomFunction(thisScope[thisFunction.name]) || isClosure(thisScope[thisFunction.name])) ? thisScope[thisFunction.name](argumentCollection=arguments): thisScope[thisFunction.name];
+				if (thisScope.keyExists(thisFunction)) {
+					return (isCustomFunction(thisScope[thisFunction]) || isClosure(thisScope[thisFunction])) ? thisScope[thisFunction](argumentCollection=arguments): thisScope[thisFunction];
 				}
 				return JavaCast('null', 0);
 			};
@@ -62,7 +62,18 @@ component name='DoubleFactory' {
 		if(!isNull(metadata.functions)) {
 			for (var fx in metadata.functions) {
 				// Stub all the functions
-				newStub[fx.name] = stubMethodCall(fx);
+				if(fx.access == 'public')
+					newStub[fx.name] = stubMethodCall(fx.name);
+			}
+
+			if(metadata.accessors) {
+				for (var px in metadata.properties) {
+					// Stub all the accessors
+					var setPx = 'set' & px.name;
+					var getPx = 'get' & px.name;
+					newStub[setPx] = stubMethodCall(setPx);
+					newStub[getPx] = stubMethodCall(getPx);
+				}
 			}
 		}
 
@@ -159,7 +170,7 @@ component name='DoubleFactory' {
 						return thisScope[thisFunction.name]['return'];
 					}
 					if (IsCustomFunction(thisScope[thisFunction.name]['return'])) {
-						return thisScope[thisFunction.name]['return']();
+						return thisScope[thisFunction.name]['return'](argumentCollection=arguments);
 					}
 					return JavaCast('null', 0);
 				}
@@ -195,14 +206,35 @@ component name='DoubleFactory' {
 		return newMock;
 	}
 
-	// public static component function generateFake (required string componentPath = '') output="false" {
-	// 	var newFake = static.loadComponentPath(argumentCollection=arguments);
-	// 	var metadata = getMetaData(newFake);
-	//
-	// 	var proxyScope = {};
-	//
-	// 	return newFake;
-	// }
+	public static component function generateFake (required string componentPath = '') output="false" {
+		var newFake = static.loadComponentPath(argumentCollection=arguments);
+		var metadata = getMetaData(newFake);
+	
+		var proxyScope = {};
+		
+		var replaceMethodCall = function (required struct methodDefinition) {
+			var thisFunction = duplicate(arguments.methodDefinition);
+			var thisScope = proxyScope;
+
+			return function () {
+				if(thisScope.keyExists(thisFunction.name))
+					return thisScope[thisFunction.name](argumentCollection=arguments);
+				return;
+			}
+		}
+
+		if(!isNull(metadata.functions)) {
+			for (var fx in metadata.functions) {
+				newFake[fx.name] = replaceMethodCall(fx);
+			}
+		}
+
+		newFake.replace = function (String methodName, Function implementation) {
+			proxyScope[arguments.methodName] = implementation;
+		}
+
+		return newFake;
+	}
 
 	private static component function loadComponentPath(required string componentPath='') {
 		if (arguments.componentPath == '') {
@@ -217,7 +249,8 @@ component name='DoubleFactory' {
 	}
 
 	private static string function generateBlankComponent () {
-		var componentTemplate = "component name='GenericTestDouble' { public component function init () { return this; } }";
+		var initMethod = "public component function init () { return this; }";
+		var componentTemplate = "component name='GenericTestDouble' { #initMethod# }";
 		var componentPath = static.generateComponent('GenericTestDouble', componentTemplate);
 
 		return componentPath;

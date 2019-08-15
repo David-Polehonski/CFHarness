@@ -58,7 +58,7 @@ component name="testMockService" extends="cfharness.core.BaseTest" {
 
 		cfhttp(method="get" url="http://localhost:8181/_test/remote.cfm/testing/this", result="firstResponse");
 
-		var observervations = cfharness.core.MockService::retrieveCalls(observerId);
+		var observervations = cfharness.core.MockService::retreiveCalls(observerId);
 		assert(arrayLen(observervations) == 1, 'MockService return an array of service calls for inspection');
 		assert(observervations[1]['serviceUrl'] == '/testing/this', 'Service Url should be the `/testing/this`');
 
@@ -69,12 +69,12 @@ component name="testMockService" extends="cfharness.core.BaseTest" {
 
 		assert(function () {
 			try {
-				cfharness.core.MockService::retrieveCalls(observerId)
+				cfharness.core.MockService::retreiveCalls(observerId)
 			} catch (InvalidObserverId e) {
 				return true;
 			}
 			return false;
-		}, 'Once disregarded `retrieveCalls` throws and InvalidObserverId exception.');
+		}, 'Once disregarded `retreiveCalls` throws and InvalidObserverId exception.');
 	}
 
 	public void function onTearDown() {

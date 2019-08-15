@@ -7,9 +7,9 @@ component accessors=true output=false persistent=false {
 		return this;
 	}
 
-	public array function retrieveCalls () output='false' {
+	public array function retreiveCalls () output='false' {
 		if(this.getObserverId() != 0) {
-			var observations = cfharness.core.MockService::retrieveCalls( this.getObserverId() );
+			var observations = cfharness.core.MockService::retreiveCalls( this.getObserverId() );
 			return observations;
 		} else {
 			throw( 'Observer has been detached from service session' );

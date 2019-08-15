@@ -117,7 +117,7 @@
 	<cffunction name="OnRequest" access="public" returntype="void" output="true" hint="Fires after pre page processing is complete.">
 		<cfargument name="TargetPage" type="string" required="true" />
 
-		<cflog file="#application['cfharnessLog']#" application="yes" text="Starting 'OnRequest'" />
+		<cflog file="#application['cfharnessLog']#" application="yes" text="Starting 'OnRequest' [#TargetPage#]" />
 		<cfif variables.rc.getEndpoint() is "MockService" >
 			<!---Its a proxy test, attempt resolve the call --->
 			<cftry>
@@ -133,23 +133,23 @@
 		</cfif>
 
 		<cfif NOT structKeyExists(REQUEST, "response")>
-			<cflog file="#APPLICATION['cfharnessLog']#" application="yes" text="Run all Tests." />
+			<cflog file="#application['cfharnessLog']#" application="yes" text="Run all Tests." />
 
 			<cfscript>
 				variables.rc.run();
 				variables.rc.finalize();
 			</cfscript>
 
-			<cflog file="#APPLICATION['cfharnessLog']#" application="yes" text="Test Suite run: Total: #REQUEST.passed + REQUEST.failed#, #REQUEST.passed# passes, #REQUEST.failed# failures." />
+			<cflog file="#application['cfharnessLog']#" application="yes" text="Test Suite run: Total: #REQUEST.passed + REQUEST.failed#, #REQUEST.passed# passes, #REQUEST.failed# failures." />
 
 			<cfset var headers = GetHttpRequestData().headers />
 
 			<cfif StructKeyExists(headers, "accept") >
 				<cfset variables.rc.setResponseType(listFirst(headers["accept"], ',')) />
-				<cflog file="#APPLICATION['cfharnessLog']#" application="yes" text="Test Suite Info: Producing results #variables.rc.getResponseType()#." />
+				<cflog file="#application['cfharnessLog']#" application="yes" text="Test Suite Info: Producing results #variables.rc.getResponseType()#." />
 			</cfif>
 
-			<cflog file="#APPLICATION['cfharnessLog']#" application="yes" text="Building Results" />
+			<cflog file="#application['cfharnessLog']#" application="yes" text="Building Results" />
 
 			<cfsavecontent variable="response">
 				<cfinclude template="_results.cfm" />
@@ -209,6 +209,7 @@
 		<cfargument name="Exception" type="any" required="true" />
 		<cfargument name="EventName" type="string" required="false" default="" />
 
+		<cfdump var="#Exception#" abort="true"/>
 		<cfif !application.keyExists('cfharness') >
 			<cfdump var="#Exception#"/>
 			<cfabort />
