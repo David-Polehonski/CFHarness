@@ -21,7 +21,7 @@ component name="BaseTest" output=false accessors=true {
 		return this;
 	}
 
-	public component function run() output=false {
+	public component function run() output=true {
 
 		variables.rc.setCurrentTest(this);
 
@@ -71,7 +71,7 @@ component name="BaseTest" output=false accessors=true {
 				if (e.detail IS NOT ""){
 					this.setError(e.detail);
 				}
-				assert(false, "An unexpected error was thrown in #fx#");
+				assert(false, "An unexpected error was thrown in #fx# :: #e.message#");
 			}
 		}
 
@@ -93,8 +93,6 @@ component name="BaseTest" output=false accessors=true {
 
 	public void function tearDown () output="false" {
 		/* Call any tearDowns */
-
-
 		this.onTearDown();
 		return;
 	}

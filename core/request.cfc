@@ -8,8 +8,8 @@ component name='request' accessors='true' output='true' {
 			if (isNull(variables.instance.self)){
 				variables.instance.self = this;
 
-				variables.instance.tests = createObject('java', 'java.util.HashMap'); // Want to preserve the order of execution
-				variables.instance.results = createObject('java', 'java.util.HashMap'); // Want to preserve the order of execution
+				variables.instance.tests = createObject('java', 'java.util.LinkedHashMap'); // Want to preserve the order of execution
+				variables.instance.results = createObject('java', 'java.util.LinkedHashMap'); // Want to preserve the order of execution
 
 				variables.instance.passed = 0;
 				variables.instance.failed = 0;
@@ -43,7 +43,7 @@ component name='request' accessors='true' output='true' {
 		variables.instance.context.currentTest = arguments.testObject;
 	}
 
-	public void function run() output='false' {
+	public void function run() output='true' {
 		for (var key in variables.instance.tests) {
 			variables.instance.tests[key].run();
 			this.addResult( variables.instance.tests[key] );
