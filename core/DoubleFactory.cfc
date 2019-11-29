@@ -20,7 +20,7 @@ component name='DoubleFactory' {
 	static {
 		components = createObject('Java','java.util.HashMap');
 	}
-
+	
 	public static component function generateDummy (required string componentPath = '') output="false" {
 		var newDummy = static.loadComponentPath(argumentCollection=arguments);
 		var metadata = getMetaData(newDummy);
@@ -44,7 +44,7 @@ component name='DoubleFactory' {
 		var metadata = getMetaData(newStub);
 
 		var proxyScope = {};
-		var stubMethodCall = function (required string methodName) {
+		newStub.stubMethodCall = function (required string methodName) {
 			var thisFunction = arguments.methodName;
 			var thisScope = proxyScope;
 			return function () {
@@ -63,7 +63,7 @@ component name='DoubleFactory' {
 			for (var fx in metadata.functions) {
 				// Stub all the functions
 				if(fx.access == 'public')
-					newStub[fx.name] = stubMethodCall(fx.name);
+					newStub[fx.name] = newStub.stubMethodCall(fx.name);
 			}
 
 			if(metadata.accessors) {
@@ -71,8 +71,8 @@ component name='DoubleFactory' {
 					// Stub all the accessors
 					var setPx = 'set' & px.name;
 					var getPx = 'get' & px.name;
-					newStub[setPx] = stubMethodCall(setPx);
-					newStub[getPx] = stubMethodCall(getPx);
+					newStub[setPx] = newStub.stubMethodCall(setPx);
+					newStub[getPx] = newStub.stubMethodCall(getPx);
 				}
 			}
 		}
@@ -249,7 +249,7 @@ component name='DoubleFactory' {
 	}
 
 	private static string function generateBlankComponent () {
-		var initMethod = "public component function init () { return this; }";
+		var initMethod = static.generateMethodSignature('init','component') & "{ return this; }";
 		var componentTemplate = "component name='GenericTestDouble' { #initMethod# }";
 		var componentPath = static.generateComponent('GenericTestDouble', componentTemplate);
 
@@ -268,4 +268,7 @@ component name='DoubleFactory' {
 		return replace(replace( componentPath, expandpath('/cfharness'), 'cfharness'), '\', '.', 'all');
 	}
 
+	private static string function generateMethodSignature(required String name, required string returnType = 'void', required string modifier = 'public') {
+		return "#arguments.modifier# #arguments.returnType# function #arguments.name# ()";
+	}
 }
