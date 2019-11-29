@@ -116,7 +116,7 @@ component name="BaseTest" output=false accessors=true {
 	}
 
 	public string function getCurrentTest() output=false {
-		return variables.currentTestMethod;
+		return (variables.keyExists('currentTestMethod')?variables.currentTestMethod:'');
 	}
 
 	/* Events for overriding */
