@@ -3,6 +3,7 @@ component name="testDoubleTest" extends="cfharness.core.BaseTest" {
 	this.testname="TestDouble";
 
 	public void function testStaticDoubleFactory () order=1 description="Instatiation and Configuration of Test Doubles" {
+		
 		var newBlankDummy = cfharness.core.DoubleFactory::generateDummy();
 		assert(!isNull(newBlankDummy), 'DoubleFactory generates a new dummy without error with no base CFC');
 
@@ -30,6 +31,10 @@ component name="testDoubleTest" extends="cfharness.core.BaseTest" {
 
 		newDoubleStub.returnOnCall(method='aStringMethod', return='Test Value');
 		assert(newDoubleStub.aStringMethod() == 'Test Value', 'Method can be Configured to return hard-coded values');
+		
+		var newDoubleStubExtended = cfharness.core.DoubleFactory::generateStub('resources.dummyExtension');
+		newDoubleStubExtended.returnOnCall(method='aPackageMethod', return='Test Value');
+		assert(newDoubleStubExtended.aPackageMethod() == 'Test Value', 'Package Method can be overwritten.');
 
 		var newDoubleSpy = cfharness.core.DoubleFactory::generateSpy('resources.dummy');
 		assert(!isNull(newDoubleSpy), 'Spy Test Double Instatiates without error with a valid component path');
