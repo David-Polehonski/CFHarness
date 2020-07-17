@@ -64,10 +64,11 @@ component name='DoubleFactory' {
 	private static void function stubComponent (required component newStub, required struct metaData) output="false" {
 		if(!arguments.metaData.keyExists('extends')) {
 			var proxyScope = {};
-			arguments.newStub.stubMethodCall = function (required string methodName) {
+			var newStub = arguments.newStub;
+			newStub.stubMethodCall = function (required string methodName) {
 				var thisFunction = arguments.methodName;
 				var thisScope = proxyScope;
-				return function () {
+				newStub[thisFunction] = function () {
 					if (thisScope.keyExists(thisFunction)) {
 						return (isCustomFunction(thisScope[thisFunction]) || isClosure(thisScope[thisFunction])) ? thisScope[thisFunction](argumentCollection=arguments): thisScope[thisFunction];
 					}
@@ -75,9 +76,10 @@ component name='DoubleFactory' {
 				};
 			};
 
-			arguments.newStub.returnOnCall = function (required string method, required any return) {
+			newStub.returnOnCall = function (required string method, required any return) {
 				proxyScope[method] = arguments.return;
 			};
+
 		} else {
 			stubComponent(newStub, arguments.metaData.extends );
 		}
@@ -85,7 +87,7 @@ component name='DoubleFactory' {
 		if(!isNull(arguments.metadata.functions)) {
 			for (var fx in arguments.metadata.functions) {
 				// Stub all the functions
-				arguments.newStub[fx.name] = arguments.newStub.stubMethodCall(fx.name);
+				newStub.stubMethodCall(fx.name);
 			}
 
 			if(arguments.metadata.accessors) {
@@ -93,8 +95,8 @@ component name='DoubleFactory' {
 					// Stub all the accessors
 					var setPx = 'set' & px.name;
 					var getPx = 'get' & px.name;
-					arguments.newStub[setPx] = arguments.newStub.stubMethodCall(setPx);
-					arguments.newStub[getPx] = arguments.newStub.stubMethodCall(getPx);
+					newStub.stubMethodCall(setPx);
+					newStub.stubMethodCall(getPx);
 				}
 			}
 		}
@@ -232,25 +234,28 @@ component name='DoubleFactory' {
 	
 		var proxyScope = {};
 		
-		var replaceMethodCall = function (required struct methodDefinition) {
-			var thisFunction = duplicate(arguments.methodDefinition);
+		newFake.overrideMethod = function (required string methodName) {
+			var thisFunction = arguments.methodName;
 			var thisScope = proxyScope;
 
-			return function () {
-				if(thisScope.keyExists(thisFunction.name))
-					return thisScope[thisFunction.name](argumentCollection=arguments);
+			newFake[thisFunction] = function () {
+				if(thisScope.keyExists(thisFunction))
+					return thisScope[thisFunction](argumentCollection=arguments);
 				return;
-			}
-		}
+			};
+
+			newFake.replaceWith = function (Function implementation) {
+				thisScope[thisFunction] = implementation;
+				newFake.replaceWith = javaCast('null', 0);
+			};
+			
+			return newFake;
+		};
 
 		if(!isNull(metadata.functions)) {
 			for (var fx in metadata.functions) {
-				newFake[fx.name] = replaceMethodCall(fx);
+				newFake.overrideMethod(fx.name);
 			}
-		}
-
-		newFake.replace = function (String methodName, Function implementation) {
-			proxyScope[arguments.methodName] = implementation;
 		}
 
 		return newFake;
