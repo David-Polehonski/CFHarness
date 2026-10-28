@@ -89,6 +89,26 @@ component name='request' accessors='true' output='true' {
 		variables.instance.context.currentTest = JavaCast('null', 0);
 	}
 
+	//	Results for command-line runners: a line per failed assertion, then the summary line that
+	//	run-suite.sh reads to decide its exit code.
+	public string function getResultReport() output='false' {
+		var lines = [];
+
+		for (var testName in variables.instance.results) {
+			var resultSet = variables.instance.results[testName];
+			for (var setName in resultSet) {
+				for (var assertionResult in resultSet[setName]) {
+					if (assertionResult.hasFailed()) {
+						arrayAppend(lines, 'FAILED  #testName# > #setName# > #assertionResult.getDescription()#: #assertionResult.getReasonForFailure()#');
+					}
+				}
+			}
+		}
+
+		arrayAppend(lines, '#variables.instance.passed + variables.instance.failed# assertions, #variables.instance.passed# passed, #variables.instance.failed# failed');
+		return arrayToList(lines, chr(10));
+	}
+
 	public string function getResponseType() output='false' {
 		if (isNull(variables.instance.responseType)) {
 			variables.instance.responseType = 'text/html';

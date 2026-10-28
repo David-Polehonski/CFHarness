@@ -48,6 +48,14 @@ component name="Assertion" extends='aCondition' {
 		return result;
 	}
 
+	//	Replaces the generic reason on a failed assertion with one the test can state, e.g. the value it got.
+	public Assertion function because(required string reason) output='false' {
+		if (!variables._.result) {
+			variables._.reasonForFailure = arguments.reason;
+		}
+		return this;
+	}
+
 	public Assertion function returnsTrue() output='false' {
 		//	For function expressions:
 		try {
