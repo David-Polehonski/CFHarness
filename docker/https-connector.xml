@@ -1,0 +1,9 @@
+    <Connector port="8282" protocol="org.apache.coyote.http11.Http11NioProtocol"
+               SSLEnabled="true" maxParameterCount="1000">
+        <SSLHostConfig>
+            <Certificate certificateKeystoreFile="conf/localhost.p12"
+                         certificateKeystorePassword="changeit"
+                         certificateKeystoreType="PKCS12"
+                         type="RSA" />
+        </SSLHostConfig>
+    </Connector>

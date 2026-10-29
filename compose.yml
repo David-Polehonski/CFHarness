@@ -1,0 +1,15 @@
+#	Lucee 6 container for CFHarness's own suite; run it through run-tests.sh.
+name: cfharness
+
+services:
+  lucee:
+    build: docker
+    ports:
+      - "${CFHARNESS_PORT:-8181}:8282"
+    volumes:
+      - .:/var/www
+    healthcheck:
+      test: ["CMD", "curl", "--silent", "--insecure", "--output", "/dev/null", "https://localhost:8282/"]
+      interval: 5s
+      timeout: 5s
+      retries: 24

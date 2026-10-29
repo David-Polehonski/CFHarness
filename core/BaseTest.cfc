@@ -29,7 +29,7 @@ component name="BaseTest" output=false accessors=true {
 			this.setup();
 		} catch (any Ex) {
 			//	Capture failures as failed tests.
-			assert(false, "An unexpected error was thrown in setup, #Ex.message#");
+			assert(false, "Setup completes without an unexpected error").because(describeError(Ex));
 			return this;
 		}
 
@@ -71,14 +71,14 @@ component name="BaseTest" output=false accessors=true {
 				if (e.detail IS NOT ""){
 					this.setError(e.detail);
 				}
-				assert(false, "An unexpected error was thrown in #fx# :: #e.message#");
+				assert(false, "#fx# completes without an unexpected error").because(describeError(e));
 			}
 		}
 
 		try {
 			this.tearDown();
 		} catch (any Ex) {
-			assert(false, "An unexpected error was thrown during tearDown, #Ex.message#");
+			assert(false, "Teardown completes without an unexpected error").because(describeError(Ex));
 			return this;
 		}
 
@@ -109,6 +109,18 @@ component name="BaseTest" output=false accessors=true {
 		variables.results[getCurrentTest()][description]= assertion.assert(arguments.assertion, arguments.description).getResult(); // Returns a reference to the result data, so if we modify the assertion the new result is used.
 
 		return assertion;
+	}
+
+	//	One line naming an error and the template line that threw it, for failure reports.
+	public string function describeError(required any error) output=false {
+		var description = arguments.error.message;
+		if (len(arguments.error.detail ?: '')) {
+			description &= ' (#arguments.error.detail#)';
+		}
+		if (arrayLen(arguments.error.tagContext ?: [])) {
+			description &= ' at #arguments.error.tagContext[1].template#:#arguments.error.tagContext[1].line#';
+		}
+		return description;
 	}
 
 	public void function setCurrentTest(required string testMethod) output=false {

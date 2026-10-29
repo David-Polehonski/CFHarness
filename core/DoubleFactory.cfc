@@ -23,61 +23,83 @@ component name='DoubleFactory' {
 	
 	public static component function generateDummy (required string componentPath = '') output="false" {
 		var newDummy = static.loadComponentPath(argumentCollection=arguments);
-		var metadata = getMetaData(newDummy);
-
-		newDummy.throwOnCall = function (required string method, required string exception) {
-			var exception = arguments.exception;
-			newDummy[arguments.method] = function () { throw( type='DummyMethodExecutionError', message=exception) };
-		}
-
-		if(!isNull(metadata.functions)) {
-			for (var fx in metadata.functions) {
-				newDummy[fx.name] = function () {}; // Noop all the functions
-			}
-		}
+		noopComponent(newDummy, getMetaData(newDummy));
 
 		return newDummy;
 	}
 
-	public static component function generateStub (required string componentPath = '') output="true" {
-		var newStub = static.loadComponentPath(argumentCollection=arguments);
-		var metadata = getMetaData(newStub);
-
-		var proxyScope = {};
-		newStub.stubMethodCall = function (required string methodName) {
-			var thisFunction = arguments.methodName;
-			var thisScope = proxyScope;
-			return function () {
-				if (thisScope.keyExists(thisFunction)) {
-					return (isCustomFunction(thisScope[thisFunction]) || isClosure(thisScope[thisFunction])) ? thisScope[thisFunction](argumentCollection=arguments): thisScope[thisFunction];
-				}
-				return JavaCast('null', 0);
-			};
-		};
-
-		newStub.returnOnCall = function (required string method, required any return) {
-			proxyScope[method] = arguments.return;
-		};
-
-		if(!isNull(metadata.functions)) {
-			for (var fx in metadata.functions) {
-				// Stub all the functions
-				if(fx.access == 'public')
-					newStub[fx.name] = newStub.stubMethodCall(fx.name);
+	private static void function noopComponent (required component newDummy, required struct metaData) output="false" {
+		if(!arguments.metaData.keyExists('extends')) {
+			var proxyScope = {};
+			arguments.newDummy.throwOnCall = function (required string method, required string exception) {
+				var exception = arguments.exception;
+				proxyScope[arguments.method] = exception;
 			}
 
-			if(metadata.accessors) {
-				for (var px in metadata.properties) {
+			arguments.newDummy.noop = function (string functionName) {
+				var fxName = arguments.functionName;
+				return function () {
+					if (proxyScope.keyExists(fxName))
+						throw( type='DummyMethodExecutionError', message=proxyScope[fxName]);
+				};
+			}
+		} else {
+			noopComponent(arguments.newDummy, arguments.metaData.extends );
+		}
+
+		if(!isNull(arguments.metadata.functions)) {
+			for (var fx in arguments.metadata.functions) {
+				arguments.newDummy[fx.name] = arguments.newDummy.noop(fx.name); // Noop all the functions
+			}
+		}
+	}
+
+	public static component function generateStub (required string componentPath = '') output="true" {
+		var newStub = static.loadComponentPath(argumentCollection=arguments);
+		stubComponent(newStub, getMetaData(newStub) );
+
+		return newStub;
+	}
+
+	private static void function stubComponent (required component newStub, required struct metaData) output="false" {
+		if(!arguments.metaData.keyExists('extends')) {
+			var proxyScope = {};
+			var newStub = arguments.newStub;
+			newStub.stubMethodCall = function (required string methodName) {
+				var thisFunction = arguments.methodName;
+				var thisScope = proxyScope;
+				newStub[thisFunction] = function () {
+					if (thisScope.keyExists(thisFunction)) {
+						return (isCustomFunction(thisScope[thisFunction]) || isClosure(thisScope[thisFunction])) ? thisScope[thisFunction](argumentCollection=arguments): thisScope[thisFunction];
+					}
+					return JavaCast('null', 0);
+				};
+			};
+
+			newStub.returnOnCall = function (required string method, required any return) {
+				proxyScope[method] = arguments.return;
+			};
+
+		} else {
+			stubComponent(newStub, arguments.metaData.extends );
+		}
+
+		if(!isNull(arguments.metadata.functions)) {
+			for (var fx in arguments.metadata.functions) {
+				// Stub all the functions
+				newStub.stubMethodCall(fx.name);
+			}
+
+			if(arguments.metadata.accessors) {
+				for (var px in arguments.metadata.properties) {
 					// Stub all the accessors
 					var setPx = 'set' & px.name;
 					var getPx = 'get' & px.name;
-					newStub[setPx] = newStub.stubMethodCall(setPx);
-					newStub[getPx] = newStub.stubMethodCall(getPx);
+					newStub.stubMethodCall(setPx);
+					newStub.stubMethodCall(getPx);
 				}
 			}
 		}
-
-		return newStub;
 	}
 
 	public static component function generateSpy (required string componentPath = '') output="false" {
@@ -212,25 +234,28 @@ component name='DoubleFactory' {
 	
 		var proxyScope = {};
 		
-		var replaceMethodCall = function (required struct methodDefinition) {
-			var thisFunction = duplicate(arguments.methodDefinition);
+		newFake.overrideMethod = function (required string methodName) {
+			var thisFunction = arguments.methodName;
 			var thisScope = proxyScope;
 
-			return function () {
-				if(thisScope.keyExists(thisFunction.name))
-					return thisScope[thisFunction.name](argumentCollection=arguments);
+			newFake[thisFunction] = function () {
+				if(thisScope.keyExists(thisFunction))
+					return thisScope[thisFunction](argumentCollection=arguments);
 				return;
-			}
-		}
+			};
+
+			newFake.replaceWith = function (Function implementation) {
+				thisScope[thisFunction] = implementation;
+				newFake.replaceWith = javaCast('null', 0);
+			};
+			
+			return newFake;
+		};
 
 		if(!isNull(metadata.functions)) {
 			for (var fx in metadata.functions) {
-				newFake[fx.name] = replaceMethodCall(fx);
+				newFake.overrideMethod(fx.name);
 			}
-		}
-
-		newFake.replace = function (String methodName, Function implementation) {
-			proxyScope[arguments.methodName] = implementation;
 		}
 
 		return newFake;

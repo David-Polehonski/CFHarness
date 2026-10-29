@@ -83,7 +83,7 @@
 			<cfset var testPath = ListQualify(CGI.path_info, '' , '/') />
 			<cfif testPath IS NOT "">
 				<cfif FileExists(Expandpath('/testroot/#testPath#.cfc')) >
-					<cfset test = createObject('component', 'testroot.#testPath#').init() />
+					<cfset queueTestComponent(testPath) />
 				<cfelse>
 					<cfset THIS.onMissingTemplate(ListLast(testPath, '/')) />
 				</cfif>
@@ -95,7 +95,7 @@
 				<cfset var pattern = "^([\w\._-]+)test.cfc" />
 				<cfloop query="tests">
 					<cfif (REFindNoCase(pattern,tests.name) IS NOT 0) AND (fileExists(expandPath('/testroot') & '/' & tests.name)) >
-						<cfset test = createObject('component', 'testroot.' & replace(tests.name, '.cfc', '')).init() />
+						<cfset queueTestComponent(replace(tests.name, '.cfc', '')) />
 					</cfif>
 				</cfloop>
 			</cfif>
@@ -114,6 +114,19 @@
 		<cfreturn true />
 	</cffunction>
 
+	<cffunction name="queueTestComponent" access="private" returntype="void" output="false" hint="Loads a test component, which queues it to run. One that fails to load is reported as a failed test, so the rest of the suite still runs.">
+		<cfargument name="componentName" type="string" required="true" />
+
+		<cftry>
+			<cfset createObject('component', 'testroot.#arguments.componentName#').init() />
+			<cfcatch>
+				<cfset var placeholder = new cfharness.core.BaseTest(arguments.componentName) />
+				<cfset placeholder.setCurrentTest('Loading #arguments.componentName#') />
+				<cfset placeholder.assert(false, 'The test component loads').because(placeholder.describeError(cfcatch)) />
+			</cfcatch>
+		</cftry>
+	</cffunction>
+
 	<cffunction name="OnRequest" access="public" returntype="void" output="true" hint="Fires after pre page processing is complete.">
 		<cfargument name="TargetPage" type="string" required="true" />
 
@@ -127,7 +140,10 @@
 				<cfset response.stream() />
 				<cfreturn />
 				<cfcatch>
-					<cfdump var="#cfcatch#" abort="true" />
+					<!--- The caller is the code under test, so answer as a failing service would rather than with a dump. --->
+					<cfset cfharness.core.Log::error("MockService failed: #cfcatch.message#") />
+					<cfset new cfharness.core.Response({ 'response': cfcatch.message, 'responseType': 'text/plain', 'status': { 'code': 500, 'text': 'SERVER ERROR' } }).stream() />
+					<cfreturn />
 				</cfcatch>
 			</cftry>
 		</cfif>
@@ -151,10 +167,14 @@
 
 			<cflog file="#application['cfharnessLog']#" application="yes" text="Building Results" />
 
-			<cfsavecontent variable="response">
-				<cfinclude template="_results.cfm" />
-			</cfsavecontent>
-			<cfset variables.rc.setResponse( response ) />
+			<cfif variables.rc.getResponseType() CONTAINS "text/plain">
+				<cfset variables.rc.setResponse( variables.rc.getResultReport() ) />
+			<cfelse>
+				<cfsavecontent variable="response">
+					<cfinclude template="_results.cfm" />
+				</cfsavecontent>
+				<cfset variables.rc.setResponse( response ) />
+			</cfif>
 		</cfif>
 
 		<cfreturn />
@@ -209,7 +229,6 @@
 		<cfargument name="Exception" type="any" required="true" />
 		<cfargument name="EventName" type="string" required="false" default="" />
 
-		<cfdump var="#Exception#" abort="true"/>
 		<cfif !application.keyExists('cfharness') >
 			<cfdump var="#Exception#"/>
 			<cfabort />
@@ -234,7 +253,7 @@
 			</cfif>
 
 			<cfset testContext.setCurrentTest( 'Application Exception' ) />
-			<cfset testContext.assert(false, assertion) />
+			<cfset testContext.assert(false, assertion).because(testContext.describeError(Exception)) />
 
 			<!--- <cfset variables.rc.finalize() /> --->
 

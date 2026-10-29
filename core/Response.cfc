@@ -24,12 +24,11 @@ component name='response' output='false' {
 		} else {
 			var binaryResponse = responseScope.response;
 		}
-		// Add cache control headers
 		if (!isNull(responseScope.status)) {
 			cfheader(statuscode=responseScope.status.code, statustext=responseScope.status.text);
 		}
-		cfheader(name="Cache-Control", value="max-age=120");
-		cfheader(name="Etag", value="#hash(binaryResponse, 'MD5')#");
+		// Test results and mock service responses change from one run to the next.
+		cfheader(name="Cache-Control", value="no-store");
 		cfcontent(type="#(NOT structKeyExists(responseScope, 'responseType'))? 'text/html' : responseScope['responseType'] #", reset="true", variable="#binaryResponse#");
 	}
 }

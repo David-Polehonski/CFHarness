@@ -16,7 +16,9 @@ component name='MockService' accessors=true {
 			try {
 				var instance = new MockService();
 				cfharness.core.Log::log("Adding #arguments.componentPath# for #arguments.serviceUrl#");
-				instance.services[arguments.serviceUrl] = createObject('component', 'testroot.#arguments.componentPath#').init();
+				//	Handlers seldom define init(), and Lucee 6 throws when an undefined init() is called.
+				var handler = createObject('component', 'testroot.#arguments.componentPath#');
+				instance.services[arguments.serviceUrl] = structKeyExists(handler, 'init') ? handler.init() : handler;
 			} catch (any e) {
 				cfharness.core.Log::warn("Failed to Instantiate #arguments.componentPath# for #arguments.serviceUrl#: #e.message#");
 			}
